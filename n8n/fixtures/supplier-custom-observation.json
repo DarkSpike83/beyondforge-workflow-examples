@@ -1,0 +1,26 @@
+{
+  "sequence": 2,
+  "expectedIncomingRows": 1,
+  "input": {
+    "baseline": {
+      "rows": [
+        {
+          "sku": "P-1",
+          "price": "10.00",
+          "stock": 3,
+          "currency": "USD"
+        }
+      ]
+    },
+    "incoming": {
+      "rows": [
+        {
+          "sku": "P-1",
+          "price": "12.00",
+          "stock": 0,
+          "currency": "USD"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,1344 @@
+{
+  "name": "Monitor a supplier catalog for price, stock and SKU changes",
+  "nodes": [
+    {
+      "id": "9b1f3ef8-f4c7-5d63-a54b-b46094d6ee6b",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -352.0
+      ],
+      "parameters": {
+        "content": "## Monitor a supplier catalog for price, stock and SKU changes\nFree n8n template. BeyondForge supplies the hosted Actor. The fixed preview has zero report events. A custom comparison requires Paid eligibility and can purchase one $0.85 full report.\n\nUse Manual Trigger for the sample or send one authorized export. Set the private journal owner, repository, stream and USD cap in Configure connection. Bind separate GitHub and Apify credentials, then enable your copy. See the setup guide for recovery.",
+        "width": 805,
+        "height": 310,
+        "color": 5
+      }
+    },
+    {
+      "id": "54d88394-6ea6-5b32-942d-29d6e4efa09b",
+      "name": "Test with one sample",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "c1cdef93-6384-5843-b0ad-398cfca3a1df",
+      "name": "Receive authorized export",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        220
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "71d57b9f-7e5a-5c2b-9fee-9929d4327684",
+      "name": "Sample observation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{\"sequence\": 1, \"input\": {\"demoCase\": \"stockout\"}}}];"
+      }
+    },
+    {
+      "id": "3fae5612-d91f-5367-9f6f-c276ecb2f42f",
+      "name": "Configure connection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const enabled = false;\nconst owner = 'YOUR_OWNER';\nconst repo = 'YOUR_PRIVATE_REPOSITORY';\nconst scope = 'supplier-demo';\nconst maxUsd = 0.01;\nconst flow = 'supplier';\nconst slug = 'supplier-catalog-reconciliation';\n// Only an operator may edit the credential destinations and spending limit.\nif (!enabled) throw new Error('Setup required. Connect both credentials, seed the private state file, review the cap and enable the workflow copy.');\nif (!/^[A-Za-z0-9-]{1,39}$/.test(owner) || !/^[A-Za-z0-9_-]{1,100}$/.test(repo) ||\n    !/^[a-z0-9-]{1,60}$/.test(scope) || !Number.isFinite(maxUsd) || maxUsd <= 0 || maxUsd > 10)\n  throw new Error('Invalid private state destination or per-run spending limit.');\nconst items = $input.all();\nif (items.length !== 1) throw new Error('Provide one captured export per execution.');\nconst { sequence, input, expectedOffers } = items[0].json;\nif (!Number.isSafeInteger(sequence) || sequence < 1 || !input || Array.isArray(input) || typeof input !== 'object')\n  throw new Error('One immutable positive sequence and one Actor input object are required.');\nconst allowed = {\n  merchant:['offers','feedXml','feedUrl','authorizedFetch','maxResults'],\n  supplier:['demoCase','baseline','incoming','priceTolerancePercent'],\n  migration:['demoCase','redirectMap','observations','previousObservations'],\n  rss:['feedXml','feedUrl','authorizedFetch','previousXml','maxResults']\n};\nif (Object.keys(input).some(k=>!allowed[flow].includes(k)))\n  throw new Error('Unexpected Actor option. This integration never requests a billable demo or optional receipt.');\nif (flow === 'merchant' || flow === 'rss') {\n  if ('maxResults' in input && (!Number.isSafeInteger(input.maxResults) || input.maxResults < 1 || input.maxResults > 5000))\n    throw new Error('The requested output limit must be a whole number from 1 through 5000.');\n  const sources = (flow === 'merchant' ? ['offers','feedXml','feedUrl'] : ['feedXml','feedUrl']).filter(k=>k in input);\n  if (sources.length !== 1 || ('feedUrl' in input && input.authorizedFetch !== true))\n    throw new Error('Supply one authorized current source.');\n} else if ('demoCase' in input && Object.keys(input).length !== 1)\n  throw new Error('Keep the demo separate from production data.');\nelse if (!('demoCase' in input) && (flow === 'supplier' ? !input.incoming : !input.redirectMap || !input.observations))\n  throw new Error('The source snapshot or observations are missing.');\nif (flow === 'merchant' && (!Number.isSafeInteger(expectedOffers) || expectedOffers < 0 || expectedOffers > 5000 ||\n    (input.maxResults ?? 5000) < expectedOffers))\n  throw new Error('Supply the trusted distinct offer count from the completed export, within the requested output limit.');\nif (flow === 'merchant' && maxUsd+Number.EPSILON < (5+90*expectedOffers)/100000)\n  throw new Error('Operator cap cannot cover the expected distinct offers and default start. Review the rate and cap before dispatch.');\nif (flow === 'supplier' && input.incoming && (!input.incoming.rows || !Array.isArray(input.incoming.rows) ||\n    !input.incoming.rows.length || input.incoming.rows.length > 5000 ||\n    !Number.isSafeInteger(items[0].json.expectedIncomingRows) || input.incoming.rows.length !== items[0].json.expectedIncomingRows))\n  throw new Error('The publisher must confirm a complete incoming export and its original row count.');\nif (flow === 'supplier' && input.incoming && maxUsd < 0.85 || flow === 'migration' && input.redirectMap && maxUsd < 2.75)\n  throw new Error('Operator cap does not cover one paid full report.');\nfunction canonical(value) {\n  if (Array.isArray(value)) return '['+value.map(canonical).join(',')+']';\n  if (value!==null && typeof value==='object') return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+canonical(value[k])).join(',')+'}';\n  return JSON.stringify(value);\n}\nconst crypto = require('crypto');\nconst signature = crypto.createHash('sha256').update(canonical({sequence,input,maxUsd,expectedOffers:expectedOffers??null})).digest('hex');\nreturn [{json:{flow,slug,owner,repo,scope,maxUsd,sequence,input,expectedOffers:expectedOffers??null,signature}}];"
+      }
+    },
+    {
+      "id": "20c21b0d-7be5-563c-81fd-a42358956c2d",
+      "name": "Verify private repository",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.github.com/repos/'+$('Configure connection').first().json.owner+'/'+ $('Configure connection').first().json.repo }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "085aa8e3-20cb-56d3-9cde-b18fc21fcb32",
+      "name": "Require private state",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const c=$('Configure connection').first().json,r=$json.body;\nif(r?.private !== true || r.full_name?.toLowerCase() !== (c.owner+'/'+c.repo).toLowerCase())\n  throw new Error('This customer-owned state repository must be private.');\nreturn [{json:{verified:true}}];"
+      }
+    },
+    {
+      "id": "41e9b572-6c8b-5a64-a22d-d7dc40634950",
+      "name": "Read state",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.github.com/repos/'+$('Configure connection').first().json.owner+'/'+ $('Configure connection').first().json.repo+'/contents/state/'+$('Configure connection').first().json.scope+'.json' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "ca5bd4f2-e8c3-5ee5-951b-11908ee51e62",
+      "name": "Inspect state",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const c=$('Configure connection').first().json,file=$json.body;\nif(file?.type!=='file' || file.encoding!=='base64' || !/^[a-f0-9]{40}$/.test(file.sha) || file.size>20000) throw new Error('Invalid private state file.');\nconst st=JSON.parse(Buffer.from(file.content,'base64').toString('utf8'));\nif(st.version!==1 || !Number.isSafeInteger(st.lastSequence) || st.lastSequence<0 ||\n   (st.baselineStore!==null && (!/^[a-zA-Z0-9]+$/.test(st.baselineStore) || !/^[a-f0-9]{64}$/.test(st.baselineDigest??''))) ||\n   (st.baselineStore===null && st.baselineDigest!=null)) throw new Error('Unexpected journal schema or missing baseline fingerprint.');\nlet action='start';\nif(c.sequence<=st.lastSequence) action='duplicate';\nelse if(st.pending!==null) {\n if(st.pending?.sequence!==c.sequence || st.pending.signature!==c.signature || !/^[a-zA-Z0-9]+$/.test(st.pending.runId??'')) throw new Error('Unresolved operation. Reconcile the recorded intent; do not start another run.');\n action='resume';\n}\nreturn [{json:{state:st,sha:file.sha,action}}];"
+      }
+    },
+    {
+      "id": "4f33a234-c89c-5271-a239-b99341725638",
+      "name": "Already processed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d66d3132-61ae-5562-b3eb-0d95b2b51ed2",
+              "leftValue": "={{ $json.action==='duplicate' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fd3408e5-8db5-562a-ba96-5aa4fb8b107c",
+      "name": "Skip duplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        -220
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{route:'DUPLICATE_SKIP',sequence:$('Configure connection').first().json.sequence}}];"
+      }
+    },
+    {
+      "id": "ceb5e639-ae27-5233-87b9-ee8e77678ef5",
+      "name": "Resume known run?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d1d716c3-7eee-5769-af51-73bf09bc7e6d",
+              "leftValue": "={{ $json.action==='resume' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "88b48e33-c5ce-5c4e-a319-fcff41f2f4e4",
+      "name": "Resume from journal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        -220
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{runId:$('Inspect state').first().json.state.pending.runId,stateSha:$('Inspect state').first().json.sha}}];"
+      }
+    },
+    {
+      "id": "11723df0-4b80-5fa9-beb2-444b23cd1020",
+      "name": "Load prior capture?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2160,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d4abbb8f-5d2c-515e-9af5-0bb9f9326dcf",
+              "leftValue": "={{ $('Inspect state').first().json.state.baselineStore!==null && !('demoCase' in $('Configure connection').first().json.input) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "107ad737-66e0-5356-9cf3-039abadd188d",
+      "name": "Load previous source",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        220
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.apify.com/v2/'+'key-value-stores/'+$('Inspect state').first().json.state.baselineStore+'/records/INPUT' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "826b5107-0869-504d-b7a3-75797b33ffab",
+      "name": "Prepare Actor input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const c=$('Configure connection').first().json,st=$('Inspect state').first().json.state;\nconst input={...c.input};\nfunction canonical(x){\n if(Array.isArray(x))return '['+x.map(canonical).join(',')+']';\n if(x!==null && typeof x==='object')return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonical(x[k])).join(',')+'}';\n return JSON.stringify(x);\n}\nif(st.baselineStore && !('demoCase' in input) && ['supplier','rss'].includes(c.flow)){\n const capture=c.flow==='supplier'?$json.body?.incoming:$json.body;\n if(!capture || require('crypto').createHash('sha256').update(canonical(capture)).digest('hex')!==st.baselineDigest)\n    throw new Error('Prior capture changed or expired. Recover the approved baseline before starting a new run.');\n}\nif(c.flow==='supplier' && !('demoCase' in input)) {\n if(st.baselineStore){\n  if('baseline' in input)throw new Error('Stored baseline already exists. Remove the initial baseline.');\n  input.baseline=$json.body?.incoming;\n }\n if(!input.baseline?.rows?.length)throw new Error('Provide the first authorized baseline or restore the previous run storage.');\n}\nif(c.flow==='rss' && st.baselineStore) {\n if('previousXml' in input)throw new Error('Remove previousXml once the checkpoint exists.');\n if($json.body?.version!==1 || !$json.body?.entries)throw new Error('Prior checkpoint is unavailable.');\n input.baseline=$json.body;\n}\nreturn [{json:{input}}];"
+      }
+    },
+    {
+      "id": "a14d37ea-2f75-58be-adc3-bc5fefd7b9e4",
+      "name": "Prepare claim write",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2760.0,
+        418.0
+      ],
+      "parameters": {
+        "jsCode": "const c=$('Configure connection').first().json;\nconst {state,sha}=$('Inspect state').first().json;\nconst pending={sequence:c.sequence,signature:c.signature,execution:String($execution.id),runId:null};\nconst nextState={...state,pending};\n\nif(!/^[a-f0-9]{40}$/.test(sha??''))throw new Error('Journal revision missing.');\nconst content=Buffer.from(JSON.stringify(nextState),'utf8').toString('base64');\nreturn [{json:{journalWrite:{message:'Update workflow journal',sha,content}}}];"
+      }
+    },
+    {
+      "id": "523fdc10-3a91-5933-8b1a-e66624fc784f",
+      "name": "Claim operation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2880,
+        0
+      ],
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ 'https://api.github.com/repos/'+$('Configure connection').first().json.owner+'/'+ $('Configure connection').first().json.repo+'/contents/state/'+$('Configure connection').first().json.scope+'.json' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.journalWrite }}"
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "3948ac91-8af3-5239-ba5c-e2b39a9ab6b1",
+      "name": "Confirm claim",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        220
+      ],
+      "parameters": {
+        "jsCode": "const sha=$json.body?.content?.sha;\nif(!/^[a-f0-9]{40}$/.test(sha??'') || sha===$('Inspect state').first().json.sha) throw new Error('No new journal revision acknowledged. Keep the stream on hold.');\nreturn [{json:{acknowledged:true}}];"
+      }
+    },
+    {
+      "id": "ca061c1d-12ce-51d6-9a2f-ece0b55cf249",
+      "name": "Start one Actor run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3120,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.apify.com/v2/'+'acts/beyondforge~supplier-catalog-reconciliation/runs?restartOnError=false&maxTotalChargeUsd='+$('Configure connection').first().json.maxUsd }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Prepare Actor input').first().json.input }}"
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "b47ddde3-1609-5579-b29c-25aeaff70c97",
+      "name": "Check submission",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const id=$json.body?.data?.id;\nif(!/^[A-Za-z0-9]+$/.test(id??'')) throw new Error('No confirmed run ID. Keep this operation locked and reconcile.');\nreturn [{json:{runId:id}}];"
+      }
+    },
+    {
+      "id": "b6df4dd6-ed33-5c04-a2e8-13935717585d",
+      "name": "Prepare run receipt write",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3480.0,
+        418.0
+      ],
+      "parameters": {
+        "jsCode": "const c=$('Configure connection').first().json;\nconst {state}=$('Inspect state').first().json;\nconst sha=$('Claim operation').first().json.body.content.sha;\nconst pending={sequence:c.sequence,signature:c.signature,execution:String($execution.id),runId:$json.runId};\nconst nextState={...state,pending};\n\nif(!/^[a-f0-9]{40}$/.test(sha??''))throw new Error('Journal revision missing.');\nconst content=Buffer.from(JSON.stringify(nextState),'utf8').toString('base64');\nreturn [{json:{journalWrite:{message:'Update workflow journal',sha,content}}}];"
+      }
+    },
+    {
+      "id": "432456ee-ba09-5cc1-aceb-ca0ad3a76156",
+      "name": "Persist run ID",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3600,
+        0
+      ],
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ 'https://api.github.com/repos/'+$('Configure connection').first().json.owner+'/'+ $('Configure connection').first().json.repo+'/contents/state/'+$('Configure connection').first().json.scope+'.json' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.journalWrite }}"
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "01168844-fa1e-5eb5-90bb-4d828b36149a",
+      "name": "Use acknowledged run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3840,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{runId:$('Check submission').first().json.runId,stateSha:$json.body.content.sha}}];"
+      }
+    },
+    {
+      "id": "b464270f-5b04-53cc-a607-82f782a6c0fc",
+      "name": "Prepare lookup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4080,
+        0
+      ],
+      "parameters": {
+        "jsCode": "if(!/^[a-zA-Z0-9]+$/.test($json.runId) || !/^[a-f0-9]{40}$/.test($json.stateSha))throw new Error('Run or journal receipt missing.');return $input.all();"
+      }
+    },
+    {
+      "id": "827fe458-0529-511e-b12e-51641dd7ad48",
+      "name": "Read final status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4320,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.apify.com/v2/'+'actor-runs/'+$('Prepare lookup').first().json.runId+'?waitForFinish=60' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "2ce0a4c9-5ed7-5c95-91bc-106a5e7faa4a",
+      "name": "Require terminal state",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4320,
+        220
+      ],
+      "parameters": {
+        "jsCode": "const r=$json.body?.data;\nif(r?.id!==$('Prepare lookup').first().json.runId)throw new Error('Run receipt mismatch.');\nif(!['SUCCEEDED','FAILED','ABORTED','TIMED-OUT'].includes(r.status))throw new Error('Run pending. Repeat the same sequence and input to resume without a new start.');\nreturn [{json:{terminal:true}}];"
+      }
+    },
+    {
+      "id": "72f311e0-2ba8-5cde-abd4-a2e1b15afebf",
+      "name": "Allow billing to settle",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4560,
+        220
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 10,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "900916b7-e316-587e-84a5-fe74a5e7cf4b",
+      "name": "Read settled accounting",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4800,
+        220
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.apify.com/v2/'+'actor-runs/'+$('Prepare lookup').first().json.runId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "7f79b53d-4b55-5bb7-88fd-5783609bd476",
+      "name": "Check run identity",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4560,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const r=$json.body?.data;\nif(!r || r.id!==$('Prepare lookup').first().json.runId || r.actId!=='6LdV9Lku6qZCYYF5f' ||\n   ![r.defaultDatasetId,r.defaultKeyValueStoreId].every(x=>typeof x==='string' && /^[A-Za-z0-9]+$/.test(x)))\n throw new Error('Run identity or storage mismatch.');\nif(!['SUCCEEDED','FAILED','ABORTED','TIMED-OUT'].includes(r.status))throw new Error('Run pending. Repeat the same sequence and input to resume without a new start.');\nreturn [{json:r}];"
+      }
+    },
+    {
+      "id": "55259075-d1de-549c-b089-f39d17f39908",
+      "name": "Read run summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4800,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.apify.com/v2/'+'key-value-stores/'+$('Check run identity').first().json.defaultKeyValueStoreId+'/records/RUN_SUMMARY' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "2e0c5674-0574-55af-b2aa-d914beeaec0e",
+      "name": "Require complete run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5040,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const run=$('Check run identity').first().json,outcome=$json.body?.outcome;\nif(run.status!=='SUCCEEDED' || outcome!=='complete') {\n const reason=['plan_required','plan_limit','free_limit','budget_limit','budget_insufficient','result_limit','source_error','invalid_input'].includes(outcome)?outcome:run.status;\n throw new Error('No complete delivery ('+reason+'). Reconcile this observation; baseline held.');\n}\nreturn [{json:{complete:true}}];"
+      }
+    },
+    {
+      "id": "8759b3a0-5c39-57b2-95d3-a4364b8b03eb",
+      "name": "Read delivered rows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5280,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.apify.com/v2/'+'datasets/'+$('Check run identity').first().json.defaultDatasetId+'/items?format=json&limit=5001&offset=0' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "3f93995f-c331-5df3-8f2d-a202af75c6d7",
+      "name": "Read detail",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5520,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.apify.com/v2/'+'key-value-stores/'+$('Check run identity').first().json.defaultKeyValueStoreId+'/records/REPORT' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "123db929-e840-53ab-8631-191d86d4ea84",
+      "name": "Verify delivery and charges",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5760,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const c = $('Configure connection').first().json;\nconst state = $('Inspect state').first().json;\nconst run = $('Check run identity').first().json;\nconst summary = $('Read run summary').first().json.body;\nconst rows = $('Read delivered rows').first().json.body;\nfunction check(test,message) { if (!test) throw new Error(message+' State was not advanced. Inspect this run before any new POST.'); }\nfunction same(a,b) { return canonical(a) === canonical(b); }\n// Actor reports use sorted JSON with UTF-8 and integer counts, including SKU/path strings.\nfunction canonical(x) {\n  if (x === null || typeof x !== 'object') return JSON.stringify(x);\n  if (Array.isArray(x)) return '['+x.map(canonical).join(',')+']';\n  return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonical(x[k])).join(',')+'}';\n}\nconst digest = x=>require('crypto').createHash('sha256').update(canonical(x)).digest('hex');\nconst isDigest=x=>typeof x==='string' && /^[a-f0-9]{64}$/.test(x);\nconst integer=n=>Number.isSafeInteger(n) && n >= 0;\nconst record=x=>x && typeof x==='object' && !Array.isArray(x);\ncheck(record(summary) && summary.outcome === 'complete' && Array.isArray(rows),'Incomplete service, plan restriction or invalid dataset.');\nconst ledger = run.chargedEventCounts;\ncheck(record(ledger) && Object.values(ledger).every(integer),'Missing platform charge counters.');\nconst event = {merchant:'offer-audited',rss:'feed-change',migration:'migration-audited',supplier:'catalog-reconciled'}[c.flow];\nconst reportProduct = c.flow==='supplier' || c.flow==='migration';\nconst preview = reportProduct && 'demoCase' in c.input;\nconst expectedCharge = reportProduct ? (preview?0:1) : rows.length;\ncheck((ledger['apify-actor-start']??0) <= (reportProduct?0:1),'Unexpected number of platform start events at the default memory.');\nfor(const [key,count] of Object.entries(ledger)) {\n  if (!count || key === event || (!reportProduct && key==='apify-actor-start')) continue;\n  throw new Error('Unexpected paid event. Preserve the journal and reconcile.');\n}\ncheck((ledger[event]??0) === expectedCharge,'PPE counter and delivered unit count disagree.');\nlet route, result, advanceBaseline=false, nextCapture=null;\nif (!reportProduct) {\n  check(integer(summary.matched) && summary.matched===rows.length && summary.returned===rows.length && summary.event===event &&\n        rows.every(x=>record(x)&&typeof x.id==='string'&&x.id) && new Set(rows.map(x=>x.id)).size===rows.length,\n        'Incomplete or duplicate business units.');\n}\nif (c.flow==='merchant') {\n  check(summary.uniqueOffers===rows.length && summary.uniqueOffers===c.expectedOffers &&\n        integer(summary.inputOffers) && summary.inputOffers>=summary.uniqueOffers,'Catalog coverage differs from the export manifest.');\n  check(rows.every(x=>['passed_checks','review'].includes(x.status) && Array.isArray(x.findings) &&\n        (x.status==='review')===Boolean(x.findings.length)),'Unknown offer finding.');\n  const corrections=rows.filter(x=>x.status==='review');\n  route=!rows.length?'EMPTY_CATALOG':corrections.length?'HOLD_EXPORT':'READY_FOR_REVIEW';\n  const access=c.input.feedUrl || c.expectedOffers>25 ? 'paid_feature' : 'free_compatible_inline';\n  result={audited:rows.length,access,corrections};\n} else if (c.flow === 'rss') {\n  const cp=$('Read detail').first().json.body;\n  const entries=cp?.entries;\n  check(summary.checkpointReady===true && cp?.version===1 && isDigest(cp.feedKey) && record(entries) &&\n        Object.keys(entries).length===summary.entries && summary.unchanged===summary.entries-rows.length &&\n        integer(summary.previousOnly),'RSS checkpoint and coverage disagree.');\n  check(Object.entries(entries).every(([id,v])=>isDigest(id) && record(v) &&\n        same(Object.keys(v).sort(),['content','link','published','title','updated']) && Object.values(v).every(isDigest)) &&\n        rows.every(x=>Object.hasOwn(entries,x.id) && ['new','edited'].includes(x.change) && Array.isArray(x.changedFields) && x.changedFields.length),\n        'Malformed feed state or revision.');\n  route=rows.length?'REVIEW_CHANGES':(!summary.entries?'EMPTY_FEED':summary.previousOnly?'FEED_WINDOW_CHANGED':'UNCHANGED');\n  // A temporarily empty stream must never wipe the last good baseline.\n  advanceBaseline=summary.entries>0;\n  if(advanceBaseline) nextCapture=cp;\n  result={changes:rows,entries:summary.entries,previousOnly:summary.previousOnly};\n} else {\n  const report=$('Read detail').first().json.body, overview=rows[0], mode=preview?'preview':'audit';\n  const fields=c.flow==='supplier'?['matchedSkus','unionSkus','exceptionSkus','counts']:['mappedUrls','fullyTracedUrls','flaggedUrls','findingCounts','comparison'];\n  check(rows.length===1 && record(report) && record(overview) && report.schemaVersion===1 &&\n    report.kind===(c.flow==='supplier'?'catalog-reconciliation':'migration-redirect-audit') &&\n    ['kind','schemaVersion','demoCase','outcome','outputMode',...fields].every(k=>k in report && k in overview && same(overview[k],report[k])) &&\n    summary.outputMode===mode && report.outputMode===mode && summary.deliveredReports===1 &&\n    summary.chargedEvents===expectedCharge && summary.eventName===(preview?null:event) &&\n    digest(report)===summary.reportSha256 && summary.reportSha256===overview.reportSha256,'Report fingerprint, summary or mode mismatch.');\n  if(c.flow==='supplier') {\n    check(integer(report.exceptionSkus) && integer(report.unionSkus) && report.unionSkus>=report.exceptionSkus &&\n      ['differences','clean'].includes(report.outcome) && (report.outcome==='clean')===(report.exceptionSkus===0) &&\n      Array.isArray(report.exceptions) && report.exceptions.length===(preview?Math.min(3,report.exceptionSkus):report.exceptionSkus) &&\n      new Set(report.exceptions.map(x=>x.sku)).size===report.exceptions.length &&\n      report.exceptions.every(x=>typeof x.sku==='string' && Array.isArray(x.reasons) && x.reasons.length),'Supplier coverage mismatch.');\n    if (!preview) check(report.incoming.sourceRows===c.input.incoming.rows.length && integer(report.incoming.uniqueSkus) &&\n                        report.incoming.uniqueSkus>0 && isDigest(report.incoming.snapshotSha256),'Supplier input coverage mismatch.');\n    route=preview?'DEMO_ONLY':report.exceptionSkus?'REVIEW_CATALOG_CHANGES':'CLEAN_CATALOG';\n    advanceBaseline=!preview;\n    if(advanceBaseline) nextCapture=c.input.incoming;\n  } else {\n    check(integer(report.mappedUrls) && report.mappedUrls>0 && report.fullyTracedUrls===report.mappedUrls &&\n      integer(report.flaggedUrls) && report.flaggedUrls<=report.mappedUrls && ['clean','findings'].includes(report.outcome) &&\n      (report.outcome==='clean')===(report.flaggedUrls===0) && Array.isArray(report.results) &&\n      report.results.length===(preview?Math.min(3,report.mappedUrls):report.mappedUrls) &&\n      new Set(report.results.map(x=>x.source)).size===report.results.length &&\n      report.results.every(x=>x.source && x.expected && Array.isArray(x.findings)),'Missing or inconsistent migration traces.');\n    if (!preview) check(report.results.every(x=>Array.isArray(x.hops)&&'finalStatus' in x && 'finalUrl' in x) &&\n       report.results.filter(x=>x.findings.length).length===report.flaggedUrls,'Missing migration evidence.');\n    route=preview?'DEMO_ONLY':report.flaggedUrls?'HOLD_RELEASE':'READY_FOR_SIGN_OFF';\n  }\n  result=report;\n}\nreturn [{json:{route,result,runId:run.id,storeId:run.defaultKeyValueStoreId,datasetId:run.defaultDatasetId,\n baselineStore:advanceBaseline?run.defaultKeyValueStoreId:state.state.baselineStore,\n baselineDigest:advanceBaseline?digest(nextCapture):state.state.baselineDigest??null,\n event,verifiedUnits:expectedCharge}}];"
+      }
+    },
+    {
+      "id": "93896747-040e-5e88-85a2-65971b0960c3",
+      "name": "Prepare completion write",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5880.0,
+        418.0
+      ],
+      "parameters": {
+        "jsCode": "const c=$('Configure connection').first().json;\nconst {stateSha:sha,runId}=$('Prepare lookup').first().json;\nconst nextState={version:1,lastSequence:c.sequence,baselineStore:$json.baselineStore,\n baselineDigest:$json.baselineDigest,pending:null,lastRunId:runId,lastRoute:$json.route};\n\nif(!/^[a-f0-9]{40}$/.test(sha??''))throw new Error('Journal revision missing.');\nconst content=Buffer.from(JSON.stringify(nextState),'utf8').toString('base64');\nreturn [{json:{journalWrite:{message:'Update workflow journal',sha,content}}}];"
+      }
+    },
+    {
+      "id": "fe0e710d-1c05-53b5-ae67-bcdc4bdd009b",
+      "name": "Commit verified observation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6000,
+        0
+      ],
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ 'https://api.github.com/repos/'+$('Configure connection').first().json.owner+'/'+ $('Configure connection').first().json.repo+'/contents/state/'+$('Configure connection').first().json.scope+'.json' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.journalWrite }}"
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "025c288f-2838-5f05-8b8e-427272186062",
+      "name": "Deliver verified result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const sha=$json.body?.content?.sha;\nif(!/^[a-f0-9]{40}$/.test(sha??'') || sha===$('Prepare lookup').first().json.stateSha)throw new Error('Final journal update is unconfirmed. Inspect private state and the original run.');\nconst r=$('Verify delivery and charges').first().json;\nreturn [{json:{...r,sequence:$('Configure connection').first().json.sequence}}];"
+      }
+    },
+    {
+      "id": "bf9eb35d-c840-5299-9c6f-cb0f6e5b3ef4",
+      "name": "Ready for downstream approval?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6480,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3e377c2b-1432-5dd7-8f38-bf954d0d4681",
+              "leftValue": "={{ ['READY_FOR_REVIEW','CLEAN_CATALOG','READY_FOR_SIGN_OFF','UNCHANGED'].includes($json.route) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "5d6875ec-3201-5bf5-b774-10c800807e0b",
+      "name": "Completed control",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        6720,
+        -220
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "ae6a15a3-4b65-59cf-8d6d-e4cf48277a3e",
+      "name": "Review or preview",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        6720,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "e1d05471-9c6a-5e65-b96b-fea617affd4c",
+      "name": "Prevent duplicate charges",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2640,
+        -220
+      ],
+      "parameters": {
+        "content": "## Reserve before billing\nA conditional private-file write reserves this sequence. Keep retries on POST disabled. When the POST result is ambiguous the state stays locked. Resolve it against your own Apify run history before continuing. Only a known run may be resumed.",
+        "width": 590,
+        "height": 215,
+        "color": 5
+      }
+    },
+    {
+      "id": "1ee917d4-3a72-5d54-9646-62740a8cf65d",
+      "name": "Read the result",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4800,
+        -220
+      ],
+      "parameters": {
+        "content": "## Read and verify\nCheck the terminal status, summary, complete dataset and platform event ledger. Any failed check stops the route. A missing summary or expired prior capture also requires review.",
+        "width": 590,
+        "height": 215,
+        "color": 5
+      }
+    },
+    {
+      "id": "35b06753-112a-514a-aa4a-d9556a5a807d",
+      "name": "Consumer output",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6240,
+        -440
+      ],
+      "parameters": {
+        "content": "## Downstream routing\nThe result contains a decision and verified Apify references. Attach customer-owned approval, review or ticketing here. Keep DEMO_ONLY and every HOLD or empty-source decision away from production approvals. Key downstream writes by runId for idempotence.",
+        "width": 590,
+        "height": 215,
+        "color": 5
+      }
+    }
+  ],
+  "connections": {
+    "Test with one sample": {
+      "main": [
+        [
+          {
+            "node": "Sample observation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample observation": {
+      "main": [
+        [
+          {
+            "node": "Configure connection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configure connection": {
+      "main": [
+        [
+          {
+            "node": "Verify private repository",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify private repository": {
+      "main": [
+        [
+          {
+            "node": "Require private state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require private state": {
+      "main": [
+        [
+          {
+            "node": "Read state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read state": {
+      "main": [
+        [
+          {
+            "node": "Inspect state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inspect state": {
+      "main": [
+        [
+          {
+            "node": "Already processed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive authorized export": {
+      "main": [
+        [
+          {
+            "node": "Configure connection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already processed?": {
+      "main": [
+        [
+          {
+            "node": "Skip duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resume known run?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume known run?": {
+      "main": [
+        [
+          {
+            "node": "Resume from journal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Load prior capture?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load prior capture?": {
+      "main": [
+        [
+          {
+            "node": "Load previous source",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Actor input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load previous source": {
+      "main": [
+        [
+          {
+            "node": "Prepare Actor input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Actor input": {
+      "main": [
+        [
+          {
+            "node": "Prepare claim write",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare claim write": {
+      "main": [
+        [
+          {
+            "node": "Claim operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim operation": {
+      "main": [
+        [
+          {
+            "node": "Confirm claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm claim": {
+      "main": [
+        [
+          {
+            "node": "Start one Actor run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start one Actor run": {
+      "main": [
+        [
+          {
+            "node": "Check submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check submission": {
+      "main": [
+        [
+          {
+            "node": "Prepare run receipt write",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare run receipt write": {
+      "main": [
+        [
+          {
+            "node": "Persist run ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist run ID": {
+      "main": [
+        [
+          {
+            "node": "Use acknowledged run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use acknowledged run": {
+      "main": [
+        [
+          {
+            "node": "Prepare lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume from journal": {
+      "main": [
+        [
+          {
+            "node": "Prepare lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare lookup": {
+      "main": [
+        [
+          {
+            "node": "Read final status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read final status": {
+      "main": [
+        [
+          {
+            "node": "Require terminal state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require terminal state": {
+      "main": [
+        [
+          {
+            "node": "Allow billing to settle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Allow billing to settle": {
+      "main": [
+        [
+          {
+            "node": "Read settled accounting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read settled accounting": {
+      "main": [
+        [
+          {
+            "node": "Check run identity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check run identity": {
+      "main": [
+        [
+          {
+            "node": "Read run summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read run summary": {
+      "main": [
+        [
+          {
+            "node": "Require complete run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require complete run": {
+      "main": [
+        [
+          {
+            "node": "Read delivered rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read delivered rows": {
+      "main": [
+        [
+          {
+            "node": "Read detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read detail": {
+      "main": [
+        [
+          {
+            "node": "Verify delivery and charges",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify delivery and charges": {
+      "main": [
+        [
+          {
+            "node": "Prepare completion write",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare completion write": {
+      "main": [
+        [
+          {
+            "node": "Commit verified observation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Commit verified observation": {
+      "main": [
+        [
+          {
+            "node": "Deliver verified result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deliver verified result": {
+      "main": [
+        [
+          {
+            "node": "Ready for downstream approval?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ready for downstream approval?": {
+      "main": [
+        [
+          {
+            "node": "Completed control",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Review or preview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveManualExecutions": false,
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 180,
+    "callerPolicy": "workflowsFromSameOwner"
+  }
+}

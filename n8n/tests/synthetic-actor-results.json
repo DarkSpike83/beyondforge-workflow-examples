@@ -1,0 +1,557 @@
+{
+  "15c7d1ce9b1dc0eb11814fc61d9af2eea8610b4125df93b0371039062cbbfd34": {
+    "charge": 0,
+    "checkpoint": null,
+    "event": "migration-audited",
+    "report": {
+      "comparison": {
+        "unchangedFindingSets": 0,
+        "withNewFindings": 1,
+        "withResolvedFindings": 1
+      },
+      "demoCase": "regression-recovery",
+      "findingCounts": {
+        "temporary-redirect": 1
+      },
+      "flaggedUrls": 1,
+      "fullyTracedUrls": 2,
+      "kind": "migration-redirect-audit",
+      "mappedUrls": 2,
+      "outcome": "findings",
+      "outputMode": "preview",
+      "results": [
+        {
+          "expected": "https://new.example/support",
+          "findings": [],
+          "source": "https://old.example/help"
+        },
+        {
+          "expected": "https://new.example/guides",
+          "findings": [
+            "temporary-redirect"
+          ],
+          "source": "https://old.example/resources"
+        }
+      ],
+      "schemaVersion": 1
+    },
+    "rows": [
+      {
+        "comparison": {
+          "unchangedFindingSets": 0,
+          "withNewFindings": 1,
+          "withResolvedFindings": 1
+        },
+        "demoCase": "regression-recovery",
+        "findingCounts": {
+          "temporary-redirect": 1
+        },
+        "flaggedUrls": 1,
+        "fullyTracedUrls": 2,
+        "kind": "migration-redirect-audit",
+        "mappedUrls": 2,
+        "outcome": "findings",
+        "outputMode": "preview",
+        "reportKey": "REPORT",
+        "reportSha256": "b0c432411e4fb8eda14f547e62486f47a862d98a4993a9115779a4b523c802af",
+        "schemaVersion": 1
+      }
+    ],
+    "summary": {
+      "chargedEvents": 0,
+      "deliveredReports": 1,
+      "eventName": null,
+      "outcome": "complete",
+      "outputMode": "preview",
+      "reportSha256": "b0c432411e4fb8eda14f547e62486f47a862d98a4993a9115779a4b523c802af"
+    }
+  },
+  "240f9c45d5bc03702ea9d79bd09138530a417886ba16b700c03e11c7128b9dcc": {
+    "charge": 1,
+    "checkpoint": null,
+    "event": "offer-audited",
+    "report": null,
+    "rows": [
+      {
+        "distinctVersions": 1,
+        "findings": [],
+        "id": "id:MUG-RED",
+        "offerId": "MUG-RED",
+        "status": "passed_checks"
+      }
+    ],
+    "summary": {
+      "event": "offer-audited",
+      "inputOffers": 1,
+      "matched": 1,
+      "outcome": "complete",
+      "returned": 1,
+      "rulesVersion": 1,
+      "uniqueOffers": 1
+    }
+  },
+  "283b48d82a1fe083bcb46569aa307f9055ec8cb96b6c249788765cef05a08d5c": {
+    "charge": 0,
+    "checkpoint": null,
+    "event": "catalog-reconciled",
+    "report": {
+      "baseline": {
+        "identicalDuplicates": 0,
+        "snapshotSha256": "2d382f92dbf130cdaa87bd5909225b50f4555955530f3d7d5d030fd169f0a477",
+        "sourceRows": 2,
+        "uniqueSkus": 2
+      },
+      "counts": {
+        "currency-mismatch": 0,
+        "missing-sku": 0,
+        "new-sku": 0,
+        "price-decrease": 0,
+        "price-increase": 0,
+        "restock": 1,
+        "stock-change": 0,
+        "stockout": 1,
+        "unit-basis-mismatch": 0
+      },
+      "demoCase": "stockout",
+      "exceptionSkus": 2,
+      "exceptions": [
+        {
+          "reasons": [
+            "stockout"
+          ],
+          "sku": "DEMO-A"
+        },
+        {
+          "reasons": [
+            "restock"
+          ],
+          "sku": "DEMO-B"
+        }
+      ],
+      "incoming": {
+        "identicalDuplicates": 0,
+        "snapshotSha256": "2cc835dc5b18b4e6c61e6e939d7c70f27ba8fd8159e57ba2589c95d41a228eab",
+        "sourceRows": 2,
+        "uniqueSkus": 2
+      },
+      "kind": "catalog-reconciliation",
+      "matchedSkus": 2,
+      "matchedSkusUsingImplicitUnitBasis": 2,
+      "outcome": "differences",
+      "outputMode": "preview",
+      "priceTolerancePercent": "0",
+      "schemaVersion": 1,
+      "unionSkus": 2,
+      "withinTolerancePriceChanges": 0
+    },
+    "rows": [
+      {
+        "counts": {
+          "currency-mismatch": 0,
+          "missing-sku": 0,
+          "new-sku": 0,
+          "price-decrease": 0,
+          "price-increase": 0,
+          "restock": 1,
+          "stock-change": 0,
+          "stockout": 1,
+          "unit-basis-mismatch": 0
+        },
+        "demoCase": "stockout",
+        "exceptionSkus": 2,
+        "kind": "catalog-reconciliation",
+        "matchedSkus": 2,
+        "outcome": "differences",
+        "outputMode": "preview",
+        "reportKey": "REPORT",
+        "reportSha256": "6d5190d52b4e63c614c6903e3535b752814e1953f92555fe142452c2f10aeeef",
+        "schemaVersion": 1,
+        "unionSkus": 2
+      }
+    ],
+    "summary": {
+      "chargedEvents": 0,
+      "deliveredReports": 1,
+      "eventName": null,
+      "outcome": "complete",
+      "outputMode": "preview",
+      "reportSha256": "6d5190d52b4e63c614c6903e3535b752814e1953f92555fe142452c2f10aeeef"
+    }
+  },
+  "3e024c4a7fea6061ded485fb8958ee09222c7a419548047a7be886f2803bf12c": {
+    "charge": 1,
+    "checkpoint": null,
+    "event": "catalog-reconciled",
+    "report": {
+      "baseline": {
+        "identicalDuplicates": 0,
+        "snapshotSha256": "bc513b8de951b7b805ec78a1481e9164989c063fc4b9fbc293dbba94542bb880",
+        "sourceRows": 1,
+        "uniqueSkus": 1
+      },
+      "counts": {
+        "currency-mismatch": 0,
+        "missing-sku": 0,
+        "new-sku": 0,
+        "price-decrease": 0,
+        "price-increase": 1,
+        "restock": 0,
+        "stock-change": 0,
+        "stockout": 0,
+        "unit-basis-mismatch": 0
+      },
+      "demoCase": null,
+      "exceptionSkus": 1,
+      "exceptions": [
+        {
+          "baseline": {
+            "currency": "USD",
+            "packSize": null,
+            "price": "12",
+            "stock": 0,
+            "unit": null
+          },
+          "incoming": {
+            "currency": "USD",
+            "packSize": null,
+            "price": "13",
+            "stock": 0,
+            "unit": null
+          },
+          "reasons": [
+            "price-increase"
+          ],
+          "sku": "P-1"
+        }
+      ],
+      "incoming": {
+        "identicalDuplicates": 0,
+        "snapshotSha256": "e0ab93d05705ac5b5d1e5a16050c3dc53af979fbc8b8326eced5d447f1649c98",
+        "sourceRows": 1,
+        "uniqueSkus": 1
+      },
+      "kind": "catalog-reconciliation",
+      "matchedSkus": 1,
+      "matchedSkusUsingImplicitUnitBasis": 1,
+      "outcome": "differences",
+      "outputMode": "audit",
+      "priceTolerancePercent": "0",
+      "schemaVersion": 1,
+      "unionSkus": 1,
+      "withinTolerancePriceChanges": 0
+    },
+    "rows": [
+      {
+        "counts": {
+          "currency-mismatch": 0,
+          "missing-sku": 0,
+          "new-sku": 0,
+          "price-decrease": 0,
+          "price-increase": 1,
+          "restock": 0,
+          "stock-change": 0,
+          "stockout": 0,
+          "unit-basis-mismatch": 0
+        },
+        "demoCase": null,
+        "exceptionSkus": 1,
+        "kind": "catalog-reconciliation",
+        "matchedSkus": 1,
+        "outcome": "differences",
+        "outputMode": "audit",
+        "reportKey": "REPORT",
+        "reportSha256": "73c46ad98dc1b4e2293495ea4eb087de268b354419e7cb4ff81056a107f82fd5",
+        "schemaVersion": 1,
+        "unionSkus": 1
+      }
+    ],
+    "summary": {
+      "chargedEvents": 1,
+      "deliveredReports": 1,
+      "eventName": "catalog-reconciled",
+      "outcome": "complete",
+      "outputMode": "audit",
+      "reportSha256": "73c46ad98dc1b4e2293495ea4eb087de268b354419e7cb4ff81056a107f82fd5"
+    }
+  },
+  "545772e99131772c6780f984377a4ef50bd8043b89147661c2daa32c12e2cff1": {
+    "charge": 1,
+    "checkpoint": null,
+    "event": "offer-audited",
+    "report": null,
+    "rows": [
+      {
+        "distinctVersions": 1,
+        "findings": [
+          {
+            "action": "Use the regular currency and a positive sale price below the regular price.",
+            "code": "SALE_PRICE"
+          }
+        ],
+        "id": "id:MUG-RED",
+        "offerId": "MUG-RED",
+        "status": "review"
+      }
+    ],
+    "summary": {
+      "event": "offer-audited",
+      "inputOffers": 1,
+      "matched": 1,
+      "outcome": "complete",
+      "returned": 1,
+      "rulesVersion": 1,
+      "uniqueOffers": 1
+    }
+  },
+  "5ebd19987ebbef4875843a0fcc5cf5bcaaa6166025bb2fa2e214f3027b2a8ce9": {
+    "charge": 1,
+    "checkpoint": null,
+    "event": "migration-audited",
+    "report": {
+      "comparison": {
+        "unchangedFindingSets": 0,
+        "withNewFindings": 1,
+        "withResolvedFindings": 0
+      },
+      "demoCase": null,
+      "evidenceSha256": {
+        "current": "76841b5aa45a8f5e5dffac635832031ab360029ce038df53321bce653f3966ae",
+        "map": "153a8cd6d66972325b0ccaf71d89ed5668e813a04f5c3a97cc0bd395b861a364",
+        "previous": "ba4363a4ff4acd15c31e53589ad29d19b5931962053a103bc6d4abc03f04b030"
+      },
+      "findingCounts": {
+        "temporary-redirect": 1
+      },
+      "flaggedUrls": 1,
+      "fullyTracedUrls": 1,
+      "kind": "migration-redirect-audit",
+      "mappedUrls": 1,
+      "outcome": "findings",
+      "outputMode": "audit",
+      "results": [
+        {
+          "comparison": {
+            "introduced": [
+              "temporary-redirect"
+            ],
+            "previousFinalStatus": 200,
+            "previousFinalUrl": "https://new.example/support",
+            "previousFindings": [],
+            "resolved": []
+          },
+          "expected": "https://new.example/support",
+          "finalStatus": 200,
+          "finalUrl": "https://new.example/support",
+          "findings": [
+            "temporary-redirect"
+          ],
+          "hops": [
+            {
+              "status": 302,
+              "to": "https://new.example/support"
+            }
+          ],
+          "source": "https://old.example/help"
+        }
+      ],
+      "schemaVersion": 1
+    },
+    "rows": [
+      {
+        "comparison": {
+          "unchangedFindingSets": 0,
+          "withNewFindings": 1,
+          "withResolvedFindings": 0
+        },
+        "demoCase": null,
+        "findingCounts": {
+          "temporary-redirect": 1
+        },
+        "flaggedUrls": 1,
+        "fullyTracedUrls": 1,
+        "kind": "migration-redirect-audit",
+        "mappedUrls": 1,
+        "outcome": "findings",
+        "outputMode": "audit",
+        "reportKey": "REPORT",
+        "reportSha256": "d760c827d7a617f9d98cec9466bf23b26daba14b40b9a018fbe3366522244867",
+        "schemaVersion": 1
+      }
+    ],
+    "summary": {
+      "chargedEvents": 1,
+      "deliveredReports": 1,
+      "eventName": "migration-audited",
+      "outcome": "complete",
+      "outputMode": "audit",
+      "reportSha256": "d760c827d7a617f9d98cec9466bf23b26daba14b40b9a018fbe3366522244867"
+    }
+  },
+  "6c24c7dc34be58ba97b013b4ce12da2616d78eb9a0b79f21bf7580122f3f7baa": {
+    "charge": 0,
+    "checkpoint": {
+      "entries": {
+        "1a48df4bfe0fee3604070f0b52710f36511aa5b857ec46edd79c5a66bf3c0699": {
+          "content": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "link": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "published": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "title": "69d824e8290471b7c9dda3cd9ad538ee4f85440ac0102cd227b9d84a492c909e",
+          "updated": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "feedKey": "eeed10b4e6c4f8412d27e2fd3d6757be643c47fecfaf99279e01b77c17897778",
+      "version": 1
+    },
+    "event": "feed-change",
+    "report": null,
+    "rows": [],
+    "summary": {
+      "checkpointReady": true,
+      "entries": 1,
+      "event": "feed-change",
+      "matched": 0,
+      "outcome": "complete",
+      "previousOnly": 0,
+      "receiptOutcome": "not_requested",
+      "returned": 0,
+      "unchanged": 1
+    }
+  },
+  "6e1c72bdc42bd5679239f40989e91c1ab0beb326ed69e5ee8d319b837ed78503": {
+    "charge": 1,
+    "checkpoint": {
+      "entries": {
+        "1a48df4bfe0fee3604070f0b52710f36511aa5b857ec46edd79c5a66bf3c0699": {
+          "content": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "link": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "published": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "title": "69d824e8290471b7c9dda3cd9ad538ee4f85440ac0102cd227b9d84a492c909e",
+          "updated": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "feedKey": "eeed10b4e6c4f8412d27e2fd3d6757be643c47fecfaf99279e01b77c17897778",
+      "version": 1
+    },
+    "event": "feed-change",
+    "report": null,
+    "rows": [
+      {
+        "change": "edited",
+        "changedFields": [
+          "title"
+        ],
+        "id": "1a48df4bfe0fee3604070f0b52710f36511aa5b857ec46edd79c5a66bf3c0699",
+        "link": "",
+        "title": "Updated deadline"
+      }
+    ],
+    "summary": {
+      "checkpointReady": true,
+      "entries": 1,
+      "event": "feed-change",
+      "matched": 1,
+      "outcome": "complete",
+      "previousOnly": 0,
+      "receiptOutcome": "not_requested",
+      "returned": 1,
+      "unchanged": 0
+    }
+  },
+  "f0f0fca5e8adf20ff2751831c5cb110bb1962963f92704d15a382e4b137f4560": {
+    "charge": 1,
+    "checkpoint": null,
+    "event": "catalog-reconciled",
+    "report": {
+      "baseline": {
+        "identicalDuplicates": 0,
+        "snapshotSha256": "7b345d1889ef3427e3d3ef1f1ae8711d5668d8ba949042dbe72907699af834d8",
+        "sourceRows": 1,
+        "uniqueSkus": 1
+      },
+      "counts": {
+        "currency-mismatch": 0,
+        "missing-sku": 0,
+        "new-sku": 0,
+        "price-decrease": 0,
+        "price-increase": 1,
+        "restock": 0,
+        "stock-change": 0,
+        "stockout": 1,
+        "unit-basis-mismatch": 0
+      },
+      "demoCase": null,
+      "exceptionSkus": 1,
+      "exceptions": [
+        {
+          "baseline": {
+            "currency": "USD",
+            "packSize": null,
+            "price": "10",
+            "stock": 3,
+            "unit": null
+          },
+          "incoming": {
+            "currency": "USD",
+            "packSize": null,
+            "price": "12",
+            "stock": 0,
+            "unit": null
+          },
+          "reasons": [
+            "stockout",
+            "price-increase"
+          ],
+          "sku": "P-1"
+        }
+      ],
+      "incoming": {
+        "identicalDuplicates": 0,
+        "snapshotSha256": "bc513b8de951b7b805ec78a1481e9164989c063fc4b9fbc293dbba94542bb880",
+        "sourceRows": 1,
+        "uniqueSkus": 1
+      },
+      "kind": "catalog-reconciliation",
+      "matchedSkus": 1,
+      "matchedSkusUsingImplicitUnitBasis": 1,
+      "outcome": "differences",
+      "outputMode": "audit",
+      "priceTolerancePercent": "0",
+      "schemaVersion": 1,
+      "unionSkus": 1,
+      "withinTolerancePriceChanges": 0
+    },
+    "rows": [
+      {
+        "counts": {
+          "currency-mismatch": 0,
+          "missing-sku": 0,
+          "new-sku": 0,
+          "price-decrease": 0,
+          "price-increase": 1,
+          "restock": 0,
+          "stock-change": 0,
+          "stockout": 1,
+          "unit-basis-mismatch": 0
+        },
+        "demoCase": null,
+        "exceptionSkus": 1,
+        "kind": "catalog-reconciliation",
+        "matchedSkus": 1,
+        "outcome": "differences",
+        "outputMode": "audit",
+        "reportKey": "REPORT",
+        "reportSha256": "71c8e33fcf721275c07a8f3f1385f579faa7eeb2f4c59b973cfb5a6141939b82",
+        "schemaVersion": 1,
+        "unionSkus": 1
+      }
+    ],
+    "summary": {
+      "chargedEvents": 1,
+      "deliveredReports": 1,
+      "eventName": "catalog-reconciled",
+      "outcome": "complete",
+      "outputMode": "audit",
+      "reportSha256": "71c8e33fcf721275c07a8f3f1385f579faa7eeb2f4c59b973cfb5a6141939b82"
+    }
+  }
+}

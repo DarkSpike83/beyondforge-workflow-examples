@@ -1,6 +1,6 @@
-# Use a redirect mapping tool to catch 301-to-302 migration regressions
+# Use Python for redirect testing across migration crawl exports
 
-Your release candidate returns a successful final page. That still leaves a question for the SEO lead: did each legacy URL reach the **approved destination**, using the expected kind of redirect? Use the evidence your release pipeline already collects and let a verification step return one decision for the whole migration.
+Compare observed redirect chains with your approved URL map. A 301-to-302 regression keeps the release on hold even when the final page returns HTTP 200.
 
 ## Start with one regression
 
@@ -29,3 +29,7 @@ The client checks coverage and the saved report fingerprint. It compares the rep
 A lost network reply after submission needs care. Resume an operation with its saved run ID. If the submission itself was ambiguous, inspect your Apify run history and reconcile its output and charges before submitting anything again. A newly submitted report is a separate purchase.
 
 Published by the maker of Migration Redirect Audit. This tutorial was prepared with AI assistance and checked against synthetic fixtures.
+
+## Run the same check in n8n
+
+Import the related workflow and use the synthetic observation in the [native n8n guide](../n8n/tutorials/n8n-migration.md).

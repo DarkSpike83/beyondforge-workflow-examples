@@ -1,0 +1,8 @@
+{
+  "sequence": 1,
+  "input": {
+    "feedXml": "<rss version=\"2.0\"><channel><title>Bulletins</title><link>https://example.org/bulletins</link><item><guid>issue-7</guid><title>Updated deadline</title></item></channel></rss>",
+    "previousXml": "<rss version=\"2.0\"><channel><title>Bulletins</title><link>https://example.org/bulletins</link><item><guid>issue-7</guid><title>First deadline</title></item></channel></rss>",
+    "maxResults": 25
+  }
+}

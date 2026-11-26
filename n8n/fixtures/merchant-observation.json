@@ -1,0 +1,19 @@
+{
+  "sequence": 1,
+  "expectedOffers": 1,
+  "input": {
+    "offers": [
+      {
+        "id": "MUG-RED",
+        "title": "Red mug",
+        "description": "Stoneware mug",
+        "link": "https://example.org/mug-red",
+        "image_link": "https://example.org/mug-red.png",
+        "price": "14.50 USD",
+        "sale_price": "16.00 USD",
+        "availability": "in_stock"
+      }
+    ],
+    "maxResults": 5
+  }
+}

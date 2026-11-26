@@ -1,6 +1,6 @@
 # RSS feed monitoring for corrections to published RSS and Atom entries
 
-A syndication team may already have sent a headline to subscribers when a publisher corrects it. A workflow that only looks for an unfamiliar RSS GUID or Atom entry ID will miss this edit. Compare each successfully retrieved feed with the last verified snapshot, then deliver only new or edited entries to the editorial queue.
+Use the Python example to catch a corrected headline under the same entry ID. Store the accepted checkpoint and skip a duplicate capture.
 
 This tutorial was prepared with AI assistance and checked against synthetic fixtures. The publisher develops RSS Revision Ledger.
 
@@ -30,3 +30,6 @@ Process captured snapshots in observation order. When a publisher delivers webho
 
 For professional use, point the same worker at an authorized publisher's feed. Eligible paying callers may use a direct public HTTPS `feedUrl` with `authorizedFetch: true`. For protected feeds use your existing authorized fetch step and hand over inline XML. Omit `previousXml` once a checkpoint exists. An item falling out of a rolling feed window does not establish that its publisher deleted it. The client stores its state on the customer worker's private durable volume. [Same-GUID headline demonstration](https://apify.com/beyondforge/rss-revision-ledger/examples/detect-rss-title-edits)
 
+## Run the same check in n8n
+
+Import the related workflow and use the synthetic observation in the [native n8n guide](../n8n/tutorials/n8n-rss.md).

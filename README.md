@@ -1,12 +1,27 @@
-# BeyondForge workflow examples for e-commerce, publishing and SEO
+# BeyondForge Apify workflow examples for Python and n8n
 
-Before the next Google Merchant Center upload, give your catalog team a list of offer IDs with invalid prices, availability values or GTIN check digits. This repository also includes an RSS feed monitoring workflow for editorial corrections and a redirect mapping tool integration for an agency's migration sign-off.
+Start with a catalog export, two lists from one supplier, a corrected feed entry or a migration crawl. Choose Python or an importable n8n template, review the sample output and connect the matching BeyondForge Actor.
 
 | Tutorial | BeyondForge Actor and public example | Local fixture result |
 |---|---|---|
 | [Run a Google Merchant Center feed validator before upload](tutorials/01-merchant-feed-before-upload.md) | [Merchant Feed Preflight](https://apify.com/beyondforge/merchant-feed-preflight) · [XML feed example](https://apify.com/beyondforge/merchant-feed-preflight/examples/validate-google-merchant-xml-feed) · [GTIN example](https://apify.com/beyondforge/merchant-feed-preflight/examples/validate-gtin-check-digits) | A sale price above the regular price returns `HOLD_EXPORT` and the affected SKU. |
 | [Set up RSS feed monitoring for edits to published entries](tutorials/02-rss-corrections-with-checkpoints.md) | [RSS Revision Ledger](https://apify.com/beyondforge/rss-revision-ledger) · [Headline correction example](https://apify.com/beyondforge/rss-revision-ledger/examples/detect-rss-title-edits) | A revised title returns `REVIEW_CHANGES`. The next identical capture returns `UNCHANGED`. |
 | [Use a redirect mapping tool to catch migration regressions](tutorials/03-migration-release-gate.md) | [Migration Redirect Audit](https://apify.com/beyondforge/migration-redirect-audit) · [Temporary redirect example](https://apify.com/beyondforge/migration-redirect-audit/examples/audit-temporary-redirects-after-migration) | A 301 becoming a 302 keeps the release on hold. A synthetic preview yields `DEMO_ONLY`. |
+
+## Import a complete n8n workflow
+
+Start with the Merchant workflow if your team checks a catalog after every export. Each template calls the linked Actor directly and records the outcome before returning a routing decision. Download the JSON, import it in n8n and follow its setup guide. Keep the exported workflows inactive until you have configured your own accounts and reviewed your spending limit.
+
+| Workflow JSON | What your team supplies | What comes back |
+|---|---|---|
+| [Merchant feed preflight](n8n/workflows/n8n-merchant.json) | An authorized Google Merchant Center feed and the expected offer count | A decision for this export with the offers that need review. Google makes the approval decision. |
+| [Supplier catalog monitoring](n8n/workflows/n8n-supplier.json) | Two catalog versions from the **same supplier** | A report of changes in SKU, price or availability, with a checkpoint for the next comparison. |
+| [Website migration release gate](n8n/workflows/n8n-migration.json) | The approved URL map and observations collected by your crawler | A release decision based on the observed redirect paths. |
+| [RSS editorial monitoring](n8n/workflows/n8n-rss.json) | Consecutive snapshots of an authorized RSS or Atom feed | New or edited entries and a checkpoint for the next check. |
+
+The templates are free. A real run bills the connected customer's Apify account at the Actor's published rates. You will also need n8n and your own private GitHub repository for operation state. Use a different state scope for each organization and source. An ambiguous start is held for investigation before another purchase. The synthetic fixtures and local test harness exercise the workflow without an Apify account.
+
+[Setup and test instructions](n8n/README.md)
 
 ## For agencies handling 1,000–5,000 offers
 

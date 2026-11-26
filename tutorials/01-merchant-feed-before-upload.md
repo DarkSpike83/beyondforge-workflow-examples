@@ -1,6 +1,6 @@
-# Run a Google Merchant Center feed validator before uploading XML
+# Run a Google Merchant feed validator on XML with Python
 
-An export can be valid XML and still advertise a sale price higher than the regular price. Put a check between the completed export and the upload. A catalog manager then receives the SKU and a reason to hold the file while the previous accepted export stays in service. The same validator checks GTIN check digits and availability values. [Try the GTIN example](https://apify.com/beyondforge/merchant-feed-preflight/examples/validate-gtin-check-digits)
+Check your Google Merchant Center export for SKU-level GTIN and sale-price issues before upload. The Python example returns affected offer IDs for catalog review.
 
 ## Reproduce the case
 
@@ -28,3 +28,7 @@ python workflows/export_result.py merchant --workspace ./private --scope goods-e
 Complete the first integration by checking that the bad sale price holds the synthetic export. Then send the corrected export with a **new** immutable export ID. Compare the delivered count against your expected number of distinct offers before upload. At $0.90 per 1,000 delivered audits and $0.00005 per default-memory start, set a cap covering $0.90005 for 1,000 offers or $4.50005 for 5,000. Set `maxResults` separately to cover the intended export. [Example XML audit](https://apify.com/beyondforge/merchant-feed-preflight/examples/validate-google-merchant-xml-feed)
 
 Published by the maker of Merchant Feed Preflight. This tutorial was prepared with AI assistance and checked against synthetic fixtures.
+
+## Run the same check in n8n
+
+Import the related workflow and use the synthetic observation in the [native n8n guide](../n8n/tutorials/n8n-merchant.md).
