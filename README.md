@@ -2,6 +2,8 @@
 
 Start with a catalog export, two lists from one supplier, a corrected feed entry or a migration crawl. Choose Python or an importable n8n template, review the sample output and connect the matching BeyondForge Actor.
 
+**Using Make?** The [Google Merchant feed validator for Make](make/README.md) checks a completed export on your Apify account and sends a minimal receipt to your Make scenario. The client runs in your own environment. For the retry protocol and a one-offer example, see [Webhook idempotency when a paid API call times out](n8n/tutorials/webhook-idempotency.md).
+
 | Tutorial | BeyondForge Actor and public example | Local fixture result |
 |---|---|---|
 | [Run a Google Merchant Center feed validator before upload](tutorials/01-merchant-feed-before-upload.md) | [Merchant Feed Preflight](https://apify.com/beyondforge/merchant-feed-preflight) · [XML feed example](https://apify.com/beyondforge/merchant-feed-preflight/examples/validate-google-merchant-xml-feed) · [GTIN example](https://apify.com/beyondforge/merchant-feed-preflight/examples/validate-gtin-check-digits) | A sale price above the regular price returns `HOLD_EXPORT` and the affected SKU. |

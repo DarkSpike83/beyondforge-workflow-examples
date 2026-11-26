@@ -1,0 +1,53 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "receiptId",
+    "runRef",
+    "operationKey",
+    "expected",
+    "delivered",
+    "flagged",
+    "decision"
+  ],
+  "properties": {
+    "schema": {
+      "const": "merchant-delivery-v1"
+    },
+    "receiptId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "runRef": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "operationKey": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "expected": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5000
+    },
+    "delivered": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5000
+    },
+    "flagged": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5000
+    },
+    "decision": {
+      "enum": [
+        "HOLD_EXPORT",
+        "EMPTY_CATALOG",
+        "READY_FOR_REVIEW"
+      ]
+    }
+  }
+}

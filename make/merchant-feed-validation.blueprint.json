@@ -1,0 +1,347 @@
+{
+  "name": "Google Merchant feed validator for Make",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0
+        },
+        "interface": [
+          {
+            "name": "schema",
+            "type": "text",
+            "required": true
+          },
+          {
+            "name": "receiptId",
+            "type": "text",
+            "required": true
+          },
+          {
+            "name": "runRef",
+            "type": "text",
+            "required": true
+          },
+          {
+            "name": "operationKey",
+            "type": "text",
+            "required": true
+          },
+          {
+            "name": "expected",
+            "type": "number",
+            "required": true
+          },
+          {
+            "name": "delivered",
+            "type": "number",
+            "required": true
+          },
+          {
+            "name": "flagged",
+            "type": "number",
+            "required": true
+          },
+          {
+            "name": "decision",
+            "type": "text",
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "module": "datastore:AddRecord",
+      "version": 1,
+      "parameters": {},
+      "filter": {
+        "name": "Verified coverage and decision",
+        "conditions": [
+          [
+            {
+              "a": "{{1.schema}}",
+              "o": "text:equal",
+              "b": "merchant-delivery-v1"
+            },
+            {
+              "a": "{{length(1.receiptId)}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{length(1.runRef)}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{length(1.operationKey)}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{1.delivered}}",
+              "o": "number:equal",
+              "b": "{{1.expected}}"
+            },
+            {
+              "a": "{{1.expected}}",
+              "o": "number:equal",
+              "b": "{{floor(1.expected)}}"
+            },
+            {
+              "a": "{{1.flagged}}",
+              "o": "number:equal",
+              "b": "{{floor(1.flagged)}}"
+            },
+            {
+              "a": "{{1.expected}}",
+              "o": "number:less",
+              "b": "5001"
+            },
+            {
+              "a": "{{1.decision}}",
+              "o": "text:equal",
+              "b": "HOLD_EXPORT"
+            },
+            {
+              "a": "{{1.flagged}}",
+              "o": "number:greater",
+              "b": "0"
+            },
+            {
+              "a": "{{1.flagged}}",
+              "o": "number:less",
+              "b": "{{1.delivered + 1}}"
+            },
+            {
+              "a": "{{length(replace(1.receiptId; \"/[^a-f0-9]/g\"; emptystring))}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{length(replace(1.operationKey; \"/[^a-f0-9]/g\"; emptystring))}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{length(replace(1.runRef; \"/[^a-f0-9]/g\"; emptystring))}}",
+              "o": "number:equal",
+              "b": "64"
+            }
+          ],
+          [
+            {
+              "a": "{{1.schema}}",
+              "o": "text:equal",
+              "b": "merchant-delivery-v1"
+            },
+            {
+              "a": "{{length(1.receiptId)}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{length(1.runRef)}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{length(1.operationKey)}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{1.delivered}}",
+              "o": "number:equal",
+              "b": "{{1.expected}}"
+            },
+            {
+              "a": "{{1.expected}}",
+              "o": "number:equal",
+              "b": "{{floor(1.expected)}}"
+            },
+            {
+              "a": "{{1.flagged}}",
+              "o": "number:equal",
+              "b": "{{floor(1.flagged)}}"
+            },
+            {
+              "a": "{{1.expected}}",
+              "o": "number:less",
+              "b": "5001"
+            },
+            {
+              "a": "{{1.decision}}",
+              "o": "text:equal",
+              "b": "READY_FOR_REVIEW"
+            },
+            {
+              "a": "{{1.flagged}}",
+              "o": "number:equal",
+              "b": "0"
+            },
+            {
+              "a": "{{1.expected}}",
+              "o": "number:greater",
+              "b": "0"
+            },
+            {
+              "a": "{{length(replace(1.receiptId; \"/[^a-f0-9]/g\"; emptystring))}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{length(replace(1.operationKey; \"/[^a-f0-9]/g\"; emptystring))}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{length(replace(1.runRef; \"/[^a-f0-9]/g\"; emptystring))}}",
+              "o": "number:equal",
+              "b": "64"
+            }
+          ],
+          [
+            {
+              "a": "{{1.schema}}",
+              "o": "text:equal",
+              "b": "merchant-delivery-v1"
+            },
+            {
+              "a": "{{length(1.receiptId)}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{length(1.runRef)}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{length(1.operationKey)}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{1.delivered}}",
+              "o": "number:equal",
+              "b": "{{1.expected}}"
+            },
+            {
+              "a": "{{1.expected}}",
+              "o": "number:equal",
+              "b": "{{floor(1.expected)}}"
+            },
+            {
+              "a": "{{1.flagged}}",
+              "o": "number:equal",
+              "b": "{{floor(1.flagged)}}"
+            },
+            {
+              "a": "{{1.expected}}",
+              "o": "number:less",
+              "b": "5001"
+            },
+            {
+              "a": "{{1.decision}}",
+              "o": "text:equal",
+              "b": "EMPTY_CATALOG"
+            },
+            {
+              "a": "{{1.expected}}",
+              "o": "number:equal",
+              "b": "0"
+            },
+            {
+              "a": "{{1.flagged}}",
+              "o": "number:equal",
+              "b": "0"
+            },
+            {
+              "a": "{{length(replace(1.receiptId; \"/[^a-f0-9]/g\"; emptystring))}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{length(replace(1.operationKey; \"/[^a-f0-9]/g\"; emptystring))}}",
+              "o": "number:equal",
+              "b": "64"
+            },
+            {
+              "a": "{{length(replace(1.runRef; \"/[^a-f0-9]/g\"; emptystring))}}",
+              "o": "number:equal",
+              "b": "64"
+            }
+          ]
+        ]
+      },
+      "mapper": {
+        "key": "{{1.receiptId}}",
+        "overwrite": true,
+        "data": {
+          "runRef": "{{1.runRef}}",
+          "operationKey": "{{1.operationKey}}",
+          "expected": "{{1.expected}}",
+          "delivered": "{{1.delivered}}",
+          "flagged": "{{1.flagged}}",
+          "decision": "{{1.decision}}"
+        }
+      },
+      "metadata": {
+        "designer": {
+          "x": 300,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": 3,
+      "module": "gateway:WebhookRespond",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "status": "200",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": "{\"decision\":\"{{1.decision}}\",\"receiptId\":\"{{1.receiptId}}\"}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 600,
+          "y": 0
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": false,
+      "confidential": true,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": {
+      "orphans": []
+    }
+  }
+}
