@@ -1,0 +1,95 @@
+{
+  "name": "Route a verified site-migration audit",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "110109f4-5360-4bf8-a47b-748302f5b75b",
+      "name": "Test with local data",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json: {\n  \"decision\": \"DEMO_ONLY\",\n  \"runId\": \"SyntheticDemo\",\n  \"summary\": {\n    \"outcome\": \"complete\",\n    \"deliveredReports\": 1,\n    \"chargedEvents\": 0,\n    \"eventName\": null,\n    \"outputMode\": \"preview\",\n    \"reportSha256\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\n  },\n  \"overview\": {\n    \"kind\": \"migration-redirect-audit\",\n    \"mappedUrls\": 2,\n    \"fullyTracedUrls\": 2,\n    \"flaggedUrls\": 1,\n    \"outcome\": \"findings\",\n    \"outputMode\": \"preview\",\n    \"reportSha256\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\n  }\n}}];"
+      },
+      "id": "120109f4-5360-4bf8-a47b-748302f5b75b",
+      "name": "Synthetic preview",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        230,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "130109f4-5360-4bf8-a47b-748302f5b75b",
+      "name": "From customer workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(({json: item}) => {\n  const {decision, runId, summary, overview} = item;\n  if (!summary || !overview || !/^[a-zA-Z0-9]+$/.test(runId || '') ||\n      summary.outcome !== 'complete' || summary.deliveredReports !== 1 ||\n      !/^[0-9a-f]{64}$/.test(summary.reportSha256 || '') ||\n      summary.reportSha256 !== overview.reportSha256 ||\n      overview.kind !== 'migration-redirect-audit' ||\n      !Number.isSafeInteger(overview.mappedUrls) || overview.mappedUrls < 1 ||\n      overview.mappedUrls !== overview.fullyTracedUrls ||\n      !Number.isSafeInteger(overview.flaggedUrls) || overview.flaggedUrls < 0 ||\n      overview.flaggedUrls > overview.mappedUrls ||\n      (overview.flaggedUrls === 0 ? 'clean' : 'findings') !== overview.outcome ||\n      overview.outputMode !== summary.outputMode) {\n    throw new Error('Incomplete or mismatched audit input');\n  }\n  const preview = summary.outputMode === 'preview';\n  const route = preview ? 'DEMO_ONLY' : (overview.flaggedUrls ? 'HOLD_RELEASE' : 'READY_FOR_SIGN_OFF');\n  if ((!preview && summary.outputMode !== 'audit') || decision !== route ||\n      summary.chargedEvents !== (preview ? 0 : 1) ||\n      summary.eventName !== (preview ? null : 'migration-audited')) {\n    throw new Error('Review the audit mode, event and upstream decision');\n  }\n  return {json: {route, runId, mapped: overview.mappedUrls, flagged: overview.flaggedUrls}};\n});"
+      },
+      "id": "140109f4-5360-4bf8-a47b-748302f5b75b",
+      "name": "Route verified audit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        50
+      ]
+    }
+  ],
+  "connections": {
+    "Test with local data": {
+      "main": [
+        [
+          {
+            "node": "Synthetic preview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthetic preview": {
+      "main": [
+        [
+          {
+            "node": "Route verified audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From customer workflow": {
+      "main": [
+        [
+          {
+            "node": "Route verified audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

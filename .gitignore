@@ -1,0 +1,4 @@
+private/
+*.sqlite*
+.env*
+__pycache__/

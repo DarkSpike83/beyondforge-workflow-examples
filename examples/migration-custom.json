@@ -1,0 +1,11 @@
+{
+  "redirectMap": {"rows":[{"source":"https://old.example/help","expected":"https://new.example/support"}]},
+  "observations": {"rows":[
+    {"url":"https://old.example/help","status":302,"location":"https://new.example/support"},
+    {"url":"https://new.example/support","status":200}
+  ]},
+  "previousObservations": {"rows":[
+    {"url":"https://old.example/help","status":301,"location":"https://new.example/support"},
+    {"url":"https://new.example/support","status":200}
+  ]}
+}
