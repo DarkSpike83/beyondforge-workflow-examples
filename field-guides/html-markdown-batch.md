@@ -12,11 +12,17 @@ Turn a two-row release checklist inside an HTML article into a Markdown table th
 
 The fixture delivers a Markdown table containing `Parser | Ready` and `Exporter | Pending` in their original order.
 
+### Check a table in your Markdown viewer
+
+Convert the [sample HTML](inputs/html-markdown-batch.json) and render its Markdown where your team writes release notes. Check that Parser is still paired with Ready and that Exporter follows it with Pending. Once those rows read correctly, the same check can be used on a Paid batch. Ten delivered documents plus one 256 MiB start total USD 0.04005 in Actor events.
+
 ## Plans and charges
 
 Free accepts one inline HTML document up to 8,000 bytes. Paid accepts up to 40 documents at up to 160,000 bytes each, subject to the total input limit. USD 0.004 per delivered document plus USD 0.00005 per start at 256 MB.
 
 **Will linked resources be fetched?** Supply the HTML itself. The conversion uses the chosen part of the document and can run on markup exported from your own system.
+
+These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/running/actors-in-store)
 
 ## API and AI agents
 

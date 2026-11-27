@@ -12,11 +12,17 @@ Flatten nested inventory records into a predictable two-column CSV and preserve 
 
 The result has `rowCount: 2`, the two requested columns in order, and records `BOX-A,8` and `BOX-B,0`.
 
+### Preserve zero stock
+
+Select `/sku` first and `/stock/available` second in the [warehouse sample](inputs/json-csv-export.json). Open the resulting CSV in your importer and confirm it reads the second field of `BOX-B,0` as zero. Once that check passes, reuse the same column order for your next file. Five complete tables in a single Paid run total USD 0.03005 in Actor events with one 256 MiB start.
+
 ## Plans and charges
 
 Free accepts one table up to 15 records. Paid accepts up to 40 tables and 1,000 rows per table. USD 0.006 per exported table plus USD 0.00005 per start at 256 MB.
 
 **Why did an exported dataset contain a quoted CSV inside a cell?** The Actor returns one dataset item per table. Write the text value of its `csv` property to the destination file.
+
+These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/running/actors-in-store)
 
 ## API and AI agents
 

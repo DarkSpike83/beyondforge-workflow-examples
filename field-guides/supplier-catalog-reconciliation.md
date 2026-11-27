@@ -12,11 +12,17 @@ Compare the last accepted supplier catalog against its replacement by SKU, so a 
 
 The synthetic demo has one SKU moving from USD 10 to 12.50 and another from USD 10 to 9. The relative direction matters when reviewing margin. Keep currency and pack size with the price.
 
+### Whose catalog do I compare?
+
+Use two price lists sent to your business by the same supplier. In the built-in preview, match the same SKU across both versions and confirm which price the buyer will pay next. When a replacement list arrives, use the last accepted list as the baseline and record both file dates with the report. Compare your own files on Paid when a full report is worth USD 0.85 to your team, including when all items agree.
+
 ## Plans and charges
 
 The built-in preview uses no `catalog-reconciled` event. Own catalogs require Paid. One completed full report costs USD 0.85, including a clean report. There is no separate start, SKU or anomaly fee. Each custom snapshot supports up to 5,000 rows.
 
 **Can this discover competing suppliers’ prices on the web?** The buyer supplies both snapshots. Compare what changed within that supplier’s file; use a different comparison for cross-supplier sourcing.
+
+These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/running/actors-in-store)
 
 ## API and AI agents
 

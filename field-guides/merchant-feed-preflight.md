@@ -12,11 +12,17 @@ Catch a sale price higher than the regular price in a Google Merchant Center XML
 
 The Actor returns `status: review` for `DESK-LAMP-01`. The release workflow can use this finding to hold the export. A passing check covers the rules listed by the Actor; Google retains the destination approval decision.
 
+### Check one SKU before the next upload
+
+Open the [sample XML input](inputs/merchant-feed-preflight.json) and compare both prices for `DESK-LAMP-01`. Correct that offer in your source catalog before the next delivery. For an agency checking a Paid feed of 1,000 to 5,000 unique offers, the delivered offer events total USD 0.90 to USD 4.50. Add USD 0.00005 for one start at 256 MiB. Set the run budget for the intended number of results and check the delivered count before releasing the feed.
+
 ## Plans and charges
 
 Free supports up to 25 unique inline offers. Paid supports up to 5,000 and an authorized public HTTPS feed. The list price is USD 0.00090 per unique offer result delivered, plus USD 0.00005 per start at 256 MB.
 
 **Will the test edit my shop or upload products?** The Actor reports findings. A separate release step owned by your team controls the upload.
+
+These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/running/actors-in-store)
 
 ## API and AI agents
 

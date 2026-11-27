@@ -12,11 +12,17 @@ Compare two RSS snapshots with the same GUID, identify an edited headline and se
 
 The fixture returns one `edited` entry with `changedFields` containing only `title`. A previous-only item can simply have fallen outside the publisher’s feed window.
 
+### Keep the previous feed snapshot
+
+In the example, locate the edited item by GUID and compare its old and new title. Keep the earlier checkpoint until the comparison completes. At 256 MiB, one start and one delivered edit total USD 0.00105 in Actor events. If the newsroom needs a receipt even when nothing changes, Paid can opt in at USD 0.001 for each completed comparison. With no changes, that gives USD 0.00105 including the start, or USD 0.00005 with the receipt off.
+
 ## Plans and charges
 
 Free supports inline comparisons up to 25 changes. Paid supports up to 5,000 changes and authorized feed URLs. Each change is USD 0.001, with USD 0.00005 per start at 256 MB. A Paid caller can opt in to a USD 0.001 receipt per completed comparison, including zero changes. This fixture omits the opt-in.
 
 **Does disappearance prove an article was withdrawn?** Publishers can shorten rolling feeds. Review the original publication before treating an absent entry as a retraction.
+
+These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/running/actors-in-store)
 
 ## API and AI agents
 
