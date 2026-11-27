@@ -4,14 +4,14 @@ Un broker riceve il numero RUI di una società con cui sta per lavorare. Prima d
 
 ## Verifica una società con il suo numero di iscrizione RUI
 
-1. Apri la pagina dell’Actor, seleziona la modalità di verifica e la ricerca per numero RUI. Inserisci il solo numero societario fornito dalla controparte. Mantieni attivi i metadati della fonte. Per utilizzare la versione provata su questo percorso, apri direttamente l’Actor e lascia la build predefinita 0.2.1. [Apri RUI IVASS](https://apify.com/beyondforge/rui-ivass-insurance-intermediaries)
+1. Apri la pagina dell’Actor, seleziona la modalità di verifica e la ricerca per numero RUI. Inserisci il solo numero societario fornito dalla controparte. Mantieni attivi i metadati della fonte. Puoi anche aprire la [Task di verifica per numero](https://apify.com/beyondforge/rui-ivass-insurance-intermediaries/examples/verifica-iscrizione-rui-per-numero), già impostata sulla build 0.2.1. Sostituisci il numero societario dimostrativo con quello della tua controparte. [Apri RUI IVASS](https://apify.com/beyondforge/rui-ivass-insurance-intermediaries)
 2. Prima dell’avvio controlla listino e limite di spesa. Nel caso verificato a 1.024 MiB gli eventi nominali sono **0,030 USD per l’avvio** e **0,001 USD per una verifica con una sola unità**, anche con un esito valido senza corrispondenze. Il totale di questo caso è **0,031 USD**. Una verifica con più corrispondenze può comportare più unità. Controlla memoria, prezzi, condizioni del tuo account e risorse applicabili prima di avviare lavori diversi. [Listino BeyondForge su Apify](https://apify.com/beyondforge/rui-ivass-insurance-intermediaries/pricing)
 3. Leggi `matchStatus`, `matchCount` e il primo elemento di `matches`. Per il caso univoco controlla che `matchStatus` valga `exact_unique`, che `matchCount` sia 1 e che `entityType` sia `company`. Confronta `ruiNumber`, `displayName`, `section` e `operational` con la pratica. Se uno di questi dati diverge, passa la pratica a una persona che possa riscontrarla sul portale IVASS.
 4. Annota `source.provider`, `source.snapshotDate` e `source.retrievedAt`. Il primo identifica la fonte. Il secondo indica la data dei dati. Il terzo indica quando l’Actor li ha acquisiti. Conserva i soli campi necessari, con accessi e scadenza stabiliti dalla tua organizzazione.
 
 ### Quale build usare per questa pratica
 
-Le Task con selettore 0.2.1 sono `cerca-iscritti-rui-ivass`, `esporta-il-registro-rui-ivass`. Il tag `latest` (build storica 0.0.17) resta fissato su `crea-profilo-completo-intermediario-rui`, `esporta-relazioni-e-collaboratori-rui`, `monitora-variazioni-rui-ivass`, `verifica-iscrizione-rui-per-numero`. Il preset pubblico di verifica per numero riguarda una persona fisica. Per il controllo descritto qui usa direttamente l’Actor con la build predefinita 0.2.1 e il numero della società ricevuto dalla tua controparte.
+Le Task con selettore 0.2.1 sono `cerca-iscritti-rui-ivass`, `esporta-il-registro-rui-ivass` e `verifica-iscrizione-rui-per-numero`. La Task di verifica propone un solo numero societario e conserva la provenienza IVASS. Il tag `latest` (build storica 0.0.17) resta fissato su `crea-profilo-completo-intermediario-rui`, `esporta-relazioni-e-collaboratori-rui` e `monitora-variazioni-rui-ivass`.
 
 ### Come leggere l’assenza di risultati
 
