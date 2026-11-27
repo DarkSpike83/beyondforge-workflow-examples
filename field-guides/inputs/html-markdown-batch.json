@@ -1,0 +1,9 @@
+{
+  "documents": [
+    {
+      "id": "release-handoff",
+      "scope": "article",
+      "html": "<article><h2>Release checks</h2><table><tr><th>Component</th><th>Status</th></tr><tr><td>Parser</td><td>Ready</td></tr><tr><td>Exporter</td><td>Pending</td></tr></table></article>"
+    }
+  ]
+}

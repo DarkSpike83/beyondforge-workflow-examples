@@ -1,0 +1,25 @@
+{
+  "documents": [
+    {
+      "id": "warehouse-handoff",
+      "records": [
+        {
+          "sku": "BOX-A",
+          "stock": {
+            "available": 8
+          }
+        },
+        {
+          "sku": "BOX-B",
+          "stock": {
+            "available": 0
+          }
+        }
+      ],
+      "columns": [
+        "/sku",
+        "/stock/available"
+      ]
+    }
+  ]
+}

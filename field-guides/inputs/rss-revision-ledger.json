@@ -1,0 +1,4 @@
+{
+  "previousXml": "<rss version=\"2.0\"><channel><title>Bulletin</title><link>https://bulletin.example/</link><description>Editorial fixture</description><item><guid isPermaLink=\"false\">release-42</guid><title>Release on Friday</title><link>https://bulletin.example/release-42</link><description>Product bulletin</description></item></channel></rss>",
+  "feedXml": "<rss version=\"2.0\"><channel><title>Bulletin</title><link>https://bulletin.example/</link><description>Editorial fixture</description><item><guid isPermaLink=\"false\">release-42</guid><title>Release on Monday</title><link>https://bulletin.example/release-42</link><description>Product bulletin</description></item></channel></rss>"
+}

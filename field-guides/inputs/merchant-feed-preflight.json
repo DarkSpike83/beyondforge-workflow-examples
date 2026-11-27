@@ -1,0 +1,3 @@
+{
+  "feedXml": "<rss version=\"2.0\" xmlns:g=\"http://base.google.com/ns/1.0\"><channel><title>Demo catalog</title><item><g:id>DESK-LAMP-01</g:id><g:title>Desk lamp</g:title><g:description>Fixture for a price review</g:description><g:link>https://shop.example/products/lamp</g:link><g:image_link>https://shop.example/img/lamp.png</g:image_link><g:price>30.00 USD</g:price><g:sale_price>35.00 USD</g:sale_price><g:availability>in_stock</g:availability></item></channel></rss>"
+}
