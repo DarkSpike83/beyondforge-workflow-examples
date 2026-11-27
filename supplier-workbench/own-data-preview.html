@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'; connect-src 'none'"><title>Supplier catalog format check | BeyondForge</title>
+<style>*{box-sizing:border-box}body{margin:3rem auto;padding:0 1.5rem;max-width:44rem;font:17px/1.55 system-ui;color:#162d34;background:#f8faf9}header{color:#216859;font-weight:700}h1{line-height:1.12}label,button{display:block;margin:1.4rem 0 .4rem}small{display:block}button{border:0;border-radius:.4rem;padding:.65rem 1.4rem;background:#195d51;color:white;font:inherit;cursor:pointer}output{display:block;margin-top:1rem;font-weight:650}</style></head>
+<body><header>BeyondForge</header><h1>Check a supplier catalog sample</h1><p>Choose a UTF-8 JSON array containing one to five rows from a single supplier. This local check validates SKU, stock, price and currency. It reads your sample in this browser and discards it when you close the page.</p><label for="catalog">Catalog sample (.json, up to 32 KiB)</label><input type="file" id="catalog" accept=".json,application/json"><small>Each row needs a unique text SKU, non-negative integer stock, a price string such as “12.50” and a three-letter uppercase currency code.</small><button id="check">Check format</button><output id="result" role="status" aria-live="polite"></output>
+<script>
+function checkSample(rows) {
+  if (!Array.isArray(rows) || !rows.length || rows.length>5) return 'Use a JSON array of one to five rows.';
+  const skus=new Set();
+  for (const r of rows) {
+    if(!r || typeof r.sku!=='string' || !r.sku.trim() || r.sku.trim()!==r.sku || skus.has(r.sku))
+      return 'Check the SKU column for missing, repeated or padded values.';
+    if(!Number.isSafeInteger(r.stock)||r.stock<0) return 'Use a non-negative integer for stock.';
+    if(typeof r.price!=='string'||!/^\d+(\.\d{1,4})?$/.test(r.price)) return 'Use a price string with at most four decimal places.';
+    if(typeof r.currency!=='string'||!/^[A-Z]{3}$/.test(r.currency)) return 'Use a three-letter uppercase currency code.';
+    if(r.unit!==undefined && (typeof r.unit!=='string'||!r.unit.trim()))return 'Use a non-empty text unit.';
+    if(r.packSize!==undefined && (!Number.isSafeInteger(r.packSize)||r.packSize<1))return 'Use a positive integer for pack size.';
+    skus.add(r.sku);
+  }
+  return 'Sample format accepted. A paid audit compares two complete exports from this supplier.';
+}
+document.querySelector('#check').onclick=async()=>{
+  const file=document.querySelector('#catalog').files[0],out=document.querySelector('#result');
+  if(!file||file.size>32768){out.textContent='Choose a sample of up to 32 KiB.';return}
+  try{out.textContent=checkSample(JSON.parse(await file.text()))}catch{out.textContent='This file could not be read as UTF-8 JSON.'}
+};
+</script></body></html>

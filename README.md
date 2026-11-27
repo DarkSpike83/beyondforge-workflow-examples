@@ -55,3 +55,13 @@ BeyondForge publishes the hosted Actors linked above. This repository contains t
 ## License
 
 You can use, adapt and distribute the contents of this repository commercially under the [MIT License](LICENSE). Keep its copyright and permission notice with copies or substantial portions. The license covers only the files distributed here. The separately hosted BeyondForge Actor implementations, service terms and commercial brand are outside its scope.
+
+### Price list comparison by SKU for recurring supplier catalogs
+
+A case changes from USD 12 for six units to USD 18 for twelve. While the sticker price rose, a buyer needs the pack size before deciding whether the supplier increased unit cost. The [worked comparison](supplier-workbench/TUTORIAL.md) follows this SKU and five others across two exports from the same supplier.
+
+- [Open the n8n parent workflow](supplier-workbench/supplier-export-parent.json) to read an authorized export and pass the checked rows to your private Supplier child. Its manual example runs locally without starting an Actor.
+- [Check the format of your own sample](supplier-workbench/own-data-preview.html) by downloading the HTML file and opening it locally. Your browser checks one to five rows without uploading the file.
+- [Try the free SKU demo](https://apify.com/beyondforge/supplier-catalog-reconciliation/examples/supplier-price-comparison-by-sku). A full custom report on an eligible account costs USD 0.85 for the completed comparison.
+
+BeyondForge maintains these integration examples and operates the [Supplier Catalog Reconciliation Actor](https://apify.com/beyondforge/supplier-catalog-reconciliation).

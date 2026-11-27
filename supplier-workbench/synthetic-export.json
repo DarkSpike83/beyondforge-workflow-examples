@@ -1,0 +1,98 @@
+{
+  "previous": {
+    "supplier": "SYNTHETIC-ORCHARD",
+    "complete": true,
+    "sequence": 1,
+    "rowCount": 5,
+    "rows": [
+      {
+        "sku": "OR-01",
+        "price": "10.00",
+        "stock": 4,
+        "currency": "USD",
+        "unit": "EA",
+        "packSize": 1
+      },
+      {
+        "sku": "OR-02",
+        "price": "6.00",
+        "stock": 0,
+        "currency": "USD",
+        "unit": "EA",
+        "packSize": 1
+      },
+      {
+        "sku": "OR-03",
+        "price": "8.00",
+        "stock": 4,
+        "currency": "USD",
+        "unit": "EA",
+        "packSize": 1
+      },
+      {
+        "sku": "OR-04",
+        "price": "12.00",
+        "stock": 3,
+        "currency": "USD",
+        "unit": "BOX",
+        "packSize": 6
+      },
+      {
+        "sku": "OR-05",
+        "price": "4.50",
+        "stock": 9,
+        "currency": "USD",
+        "unit": "EA",
+        "packSize": 1
+      }
+    ]
+  },
+  "current": {
+    "supplier": "SYNTHETIC-ORCHARD",
+    "complete": true,
+    "sequence": 2,
+    "rowCount": 5,
+    "rows": [
+      {
+        "sku": "OR-01",
+        "price": "11.00",
+        "stock": 0,
+        "currency": "USD",
+        "unit": "EA",
+        "packSize": 1
+      },
+      {
+        "sku": "OR-02",
+        "price": "6.00",
+        "stock": 8,
+        "currency": "USD",
+        "unit": "EA",
+        "packSize": 1
+      },
+      {
+        "sku": "OR-03",
+        "price": "8.00",
+        "stock": 4,
+        "currency": "EUR",
+        "unit": "EA",
+        "packSize": 1
+      },
+      {
+        "sku": "OR-04",
+        "price": "18.00",
+        "stock": 3,
+        "currency": "USD",
+        "unit": "BOX",
+        "packSize": 12
+      },
+      {
+        "sku": "OR-06",
+        "price": "5.00",
+        "stock": 2,
+        "currency": "USD",
+        "unit": "EA",
+        "packSize": 1
+      }
+    ]
+  }
+}

@@ -1,0 +1,200 @@
+{
+  "name": "Compare supplier price lists from an authorized export",
+  "active": false,
+  "nodes": [
+    {
+      "name": "Try the synthetic export",
+      "id": "b1447bf1-1717-6964-4563-7373e07c1630",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "name": "Synthetic supplier bundle",
+      "id": "e7946041-31cb-60d1-f0b8-f01b7262600c",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{\"previous\":{\"supplier\":\"SYNTHETIC-ORCHARD\",\"complete\":true,\"sequence\":1,\"rowCount\":5,\"rows\":[{\"sku\":\"OR-01\",\"price\":\"10.00\",\"stock\":4,\"currency\":\"USD\",\"unit\":\"EA\",\"packSize\":1},{\"sku\":\"OR-02\",\"price\":\"6.00\",\"stock\":0,\"currency\":\"USD\",\"unit\":\"EA\",\"packSize\":1},{\"sku\":\"OR-03\",\"price\":\"8.00\",\"stock\":4,\"currency\":\"USD\",\"unit\":\"EA\",\"packSize\":1},{\"sku\":\"OR-04\",\"price\":\"12.00\",\"stock\":3,\"currency\":\"USD\",\"unit\":\"BOX\",\"packSize\":6},{\"sku\":\"OR-05\",\"price\":\"4.50\",\"stock\":9,\"currency\":\"USD\",\"unit\":\"EA\",\"packSize\":1}]},\"current\":{\"supplier\":\"SYNTHETIC-ORCHARD\",\"complete\":true,\"sequence\":2,\"rowCount\":5,\"rows\":[{\"sku\":\"OR-01\",\"price\":\"11.00\",\"stock\":0,\"currency\":\"USD\",\"unit\":\"EA\",\"packSize\":1},{\"sku\":\"OR-02\",\"price\":\"6.00\",\"stock\":8,\"currency\":\"USD\",\"unit\":\"EA\",\"packSize\":1},{\"sku\":\"OR-03\",\"price\":\"8.00\",\"stock\":4,\"currency\":\"EUR\",\"unit\":\"EA\",\"packSize\":1},{\"sku\":\"OR-04\",\"price\":\"18.00\",\"stock\":3,\"currency\":\"USD\",\"unit\":\"BOX\",\"packSize\":12},{\"sku\":\"OR-06\",\"price\":\"5.00\",\"stock\":2,\"currency\":\"USD\",\"unit\":\"EA\",\"packSize\":1}]}}}];"
+      }
+    },
+    {
+      "name": "Preview the child input",
+      "id": "dfe3ef75-aaf7-2922-37a5-6b839df49953",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "function prepareExport(bundle, expectedSupplier) {\n  const reject = reason => { throw new Error(reason); };\n  if (typeof expectedSupplier !== 'string' || !expectedSupplier.trim()) reject('Missing retailer supplier binding');\n  function snapshot(doc) {\n    if (!doc || doc.supplier !== expectedSupplier || doc.complete !== true ||\n        !Number.isSafeInteger(doc.sequence) || doc.sequence < 1 || !Array.isArray(doc.rows) ||\n        !Number.isSafeInteger(doc.rowCount) || doc.rowCount < 1 || doc.rowCount > 5000 ||\n        doc.rows.length !== doc.rowCount || doc.nextPage != null) reject('Incomplete or unbound supplier export');\n    const seen = new Set();\n    return {rows: doc.rows.map(row => {\n      if (!row || typeof row.sku !== 'string' || row.sku.trim() !== row.sku || !row.sku ||\n          seen.has(row.sku) || !Number.isSafeInteger(row.stock) || row.stock < 0 ||\n          typeof row.price !== 'string' || !/^\\d+(\\.\\d{1,4})?$/.test(row.price) ||\n          typeof row.currency !== 'string' || !/^[A-Z]{3}$/.test(row.currency) ||\n          (row.unit !== undefined && (typeof row.unit !== 'string' || !row.unit.trim())) ||\n          (row.packSize !== undefined && (!Number.isSafeInteger(row.packSize) || row.packSize < 1)))\n        reject('Invalid or duplicate catalog row');\n      seen.add(row.sku);\n      return Object.fromEntries(['sku','price','stock','currency','unit','packSize']\n        .filter(k => row[k] !== undefined).map(k => [k,row[k]]));\n    })};\n  }\n  if (!bundle || typeof bundle !== 'object' || !bundle.current) reject('Missing supplier export');\n  const input = {incoming:snapshot(bundle.current)};\n  if (bundle.previous !== undefined) {\n    input.baseline = snapshot(bundle.previous);\n    if (bundle.previous.sequence !== bundle.current.sequence - 1) reject('Baseline sequence mismatch');\n  }\n  // Three UTF-8 bytes per UTF-16 code unit bounds the encoded size even for surrogate pairs.\n  if (JSON.stringify(input).length * 3 + 512 > 4 * 1024 * 1024) reject('Input exceeds conservative transport budget');\n  // A supplied pair initializes an empty stream. Later exports must follow the last confirmed revision.\n  const previousSequence = input.baseline ? 0 : bundle.current.sequence - 1;\n  return {sequence:bundle.current.sequence, previousSequence, expectedIncomingRows:input.incoming.rows.length,input};\n}\nreturn [{json:prepareExport($input.first().json,\"SYNTHETIC-ORCHARD\")}];"
+      }
+    },
+    {
+      "name": "Receive trusted retailer trigger",
+      "id": "cdd0a130-07d7-0ded-7225-207424cf3f89",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        280
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "name": "Read one authorized completed export",
+      "id": "391cee11-6fdf-3707-48eb-4348e72f47e2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        280
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://supplier.example.invalid/authorized/catalog-export",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "timeout": 15000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Check retailer supplier binding",
+      "id": "f7f1391d-e9d9-6cec-b900-824f494608af",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        280
+      ],
+      "parameters": {
+        "jsCode": "function prepareExport(bundle, expectedSupplier) {\n  const reject = reason => { throw new Error(reason); };\n  if (typeof expectedSupplier !== 'string' || !expectedSupplier.trim()) reject('Missing retailer supplier binding');\n  function snapshot(doc) {\n    if (!doc || doc.supplier !== expectedSupplier || doc.complete !== true ||\n        !Number.isSafeInteger(doc.sequence) || doc.sequence < 1 || !Array.isArray(doc.rows) ||\n        !Number.isSafeInteger(doc.rowCount) || doc.rowCount < 1 || doc.rowCount > 5000 ||\n        doc.rows.length !== doc.rowCount || doc.nextPage != null) reject('Incomplete or unbound supplier export');\n    const seen = new Set();\n    return {rows: doc.rows.map(row => {\n      if (!row || typeof row.sku !== 'string' || row.sku.trim() !== row.sku || !row.sku ||\n          seen.has(row.sku) || !Number.isSafeInteger(row.stock) || row.stock < 0 ||\n          typeof row.price !== 'string' || !/^\\d+(\\.\\d{1,4})?$/.test(row.price) ||\n          typeof row.currency !== 'string' || !/^[A-Z]{3}$/.test(row.currency) ||\n          (row.unit !== undefined && (typeof row.unit !== 'string' || !row.unit.trim())) ||\n          (row.packSize !== undefined && (!Number.isSafeInteger(row.packSize) || row.packSize < 1)))\n        reject('Invalid or duplicate catalog row');\n      seen.add(row.sku);\n      return Object.fromEntries(['sku','price','stock','currency','unit','packSize']\n        .filter(k => row[k] !== undefined).map(k => [k,row[k]]));\n    })};\n  }\n  if (!bundle || typeof bundle !== 'object' || !bundle.current) reject('Missing supplier export');\n  const input = {incoming:snapshot(bundle.current)};\n  if (bundle.previous !== undefined) {\n    input.baseline = snapshot(bundle.previous);\n    if (bundle.previous.sequence !== bundle.current.sequence - 1) reject('Baseline sequence mismatch');\n  }\n  // Three UTF-8 bytes per UTF-16 code unit bounds the encoded size even for surrogate pairs.\n  if (JSON.stringify(input).length * 3 + 512 > 4 * 1024 * 1024) reject('Input exceeds conservative transport budget');\n  // A supplied pair initializes an empty stream. Later exports must follow the last confirmed revision.\n  const previousSequence = input.baseline ? 0 : bundle.current.sequence - 1;\n  return {sequence:bundle.current.sequence, previousSequence, expectedIncomingRows:input.incoming.rows.length,input};\n}\nreturn [{json:prepareExport($input.first().json,\"REPLACE_WITH_RETAILER_SUPPLIER_ID\")}];"
+      }
+    },
+    {
+      "name": "Run the configured Supplier child",
+      "id": "acbfff1b-15cc-96bf-e44f-a7e11472214f",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        280
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "SELECT_YOUR_PRIVATE_SUPPLIER_CHILD",
+          "mode": "id"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "name": "Connection and cost",
+      "id": "c99c1d9a-309f-9648-e383-4e9871e89feb",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -300
+      ],
+      "parameters": {
+        "width": 850,
+        "height": 200,
+        "content": "## Supplier price list comparison\nManual test stops at a synthetic preview. Production needs a retailer-approved fixed HTTPS endpoint, source credential, isolated child and explicit spending cap. A completed custom audit can cost $0.85. Configure a separate private copy per retailer and supplier. Set the URL and supplier ID in that copy."
+      }
+    }
+  ],
+  "connections": {
+    "Try the synthetic export": {
+      "main": [
+        [
+          {
+            "node": "Synthetic supplier bundle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthetic supplier bundle": {
+      "main": [
+        [
+          {
+            "node": "Preview the child input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive trusted retailer trigger": {
+      "main": [
+        [
+          {
+            "node": "Read one authorized completed export",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read one authorized completed export": {
+      "main": [
+        [
+          {
+            "node": "Check retailer supplier binding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check retailer supplier binding": {
+      "main": [
+        [
+          {
+            "node": "Run the configured Supplier child",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "saveManualExecutions": false,
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveExecutionProgress": false,
+    "executionTimeout": 180
+  }
+}

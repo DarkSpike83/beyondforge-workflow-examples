@@ -1,0 +1,13 @@
+{
+  "source": "local Actor core, synthetic; no platform calls",
+  "counts": {
+    "new-sku": 1,
+    "missing-sku": 1,
+    "stockout": 1,
+    "restock": 1,
+    "price-increase": 1,
+    "currency-mismatch": 1,
+    "unit-basis-mismatch": 1
+  },
+  "outcome": "differences"
+}
