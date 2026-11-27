@@ -22,7 +22,7 @@ The built-in preview uses no `catalog-reconciled` event. Own catalogs require Pa
 
 **Can this discover competing suppliers’ prices on the web?** The buyer supplies both snapshots. Compare what changed within that supplier’s file; use a different comparison for cross-supplier sourcing.
 
-These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/running/actors-in-store)
+These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/store)
 
 ## API and AI agents
 

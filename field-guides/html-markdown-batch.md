@@ -22,7 +22,7 @@ Free accepts one inline HTML document up to 8,000 bytes. Paid accepts up to 40 d
 
 **Will linked resources be fetched?** Supply the HTML itself. The conversion uses the chosen part of the document and can run on markup exported from your own system.
 
-These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/running/actors-in-store)
+These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/store)
 
 ## API and AI agents
 

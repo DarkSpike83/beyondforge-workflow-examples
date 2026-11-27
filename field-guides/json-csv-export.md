@@ -22,7 +22,7 @@ Free accepts one table up to 15 records. Paid accepts up to 40 tables and 1,000 
 
 **Why did an exported dataset contain a quoted CSV inside a cell?** The Actor returns one dataset item per table. Write the text value of its `csv` property to the destination file.
 
-These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/running/actors-in-store)
+These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/store)
 
 ## API and AI agents
 

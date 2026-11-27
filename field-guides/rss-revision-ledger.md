@@ -22,7 +22,7 @@ Free supports inline comparisons up to 25 changes. Paid supports up to 5,000 cha
 
 **Does disappearance prove an article was withdrawn?** Publishers can shorten rolling feeds. Review the original publication before treating an absent entry as a retraction.
 
-These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/running/actors-in-store)
+These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/store)
 
 ## API and AI agents
 

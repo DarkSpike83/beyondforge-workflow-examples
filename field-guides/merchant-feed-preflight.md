@@ -31,7 +31,7 @@ Free supports up to 25 unique inline offers. Paid supports up to 5,000 and an au
 
 **Will the test edit my shop or upload products?** The Actor reports findings. A separate release step owned by your team controls the upload.
 
-These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/running/actors-in-store)
+These figures are Actor event list prices. Check your plan for any separate charges for reading or retaining results after the run. [Apify billing details](https://docs.apify.com/actors/store)
 
 ## API and AI agents
 
