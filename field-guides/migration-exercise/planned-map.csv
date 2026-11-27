@@ -1,0 +1,5 @@
+old_url,expected_final_url,expected_first_status
+https://old.example/manual,https://new.example/help/manual,301
+https://old.example/resources,https://new.example/guides,301
+https://old.example/catalog,https://new.example/shop,301
+https://old.example/shipping,https://new.example/delivery,301

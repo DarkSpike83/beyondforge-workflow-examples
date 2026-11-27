@@ -1,0 +1,5 @@
+old_url,decision,next_action
+https://old.example/manual,PASS,Record the map check and confirm replacement content with its owner
+https://old.example/resources,WRONG_DESTINATION,Fix the rule and obtain a fresh authorized observation
+https://old.example/catalog,DESTINATION_HTTP_ERROR,Investigate the target then repeat the check
+https://old.example/shipping,MISSING_EVIDENCE,Collect an observation before classifying the redirect

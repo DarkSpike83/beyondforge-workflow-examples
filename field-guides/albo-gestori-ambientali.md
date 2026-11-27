@@ -31,3 +31,24 @@ Con Apify MCP puoi chiedere
 > Usa fetch-actor-details per beyondforge/albo-gestori-ambientali. Riassumi filtri di ricerca, limiti e tariffa dell’Actor. Mostrami lo schema senza avviare una run.
 
 [Apri la ricerca per nome in Emilia Romagna](https://apify.com/beyondforge/albo-gestori-ambientali/examples/cerca-azienda-albo-gestori-ambientali-emilia-romagna) · [Input di esempio](inputs/albo-gestori-ambientali.json) · [Apify Store](https://apify.com/beyondforge/albo-gestori-ambientali) · [Apify MCP](https://docs.apify.com/mcp) · [Elenchi ufficiali dell’Albo](https://www.albonazionalegestoriambientali.it/Public/ElenchiIscritti)
+
+Prima di avviare l’Example Task, verifica che il campo `maxResults` sia impostato a **1**. La lettura della guida e dell’input è gratuita.
+
+## Dal primo controllo al lotto professionale
+
+Con i prezzi pubblici verificati il 27 novembre 2026, ogni record di iscrizione distinto salvato costa **0,005 USD**. A 256 MiB l’avvio costa **0,00005 USD**. Un’impresa può avere più record. Gli esempi sotto ipotizzano un’unica esecuzione e il numero indicato di record effettivamente consegnati. [Scheda e prezzi Apify](https://apify.com/beyondforge/albo-gestori-ambientali)
+
+| Record consegnati | Calcolo degli eventi commerciali | Totale nominale | Piano sufficiente per il limite |
+|---:|---|---:|---|
+| 1 | 1 × 0,005 + 0,00005 | **0,00505 USD** | Free |
+| 10 | 10 × 0,005 + 0,00005 | **0,05005 USD** | Free |
+| 100 | 100 × 0,005 + 0,00005 | **0,50005 USD** | Paid |
+
+Il piano Free consente fino a 10 record per run e usa lo stesso listino. Il piano Paid consente di richiederne fino a 10.000 per run. Per un incarico superiore a 10 record scegli un’unica ricerca Paid con il limite e il budget necessari. Prima di un lotto verificare in Console il credito, il preventivo per le impostazioni selezionate e il numero massimo di risultati.
+
+## Quando ripetere la verifica
+
+Un controllo ha senso quando entra un nuovo trasportatore, cambia il servizio richiesto o scade la qualifica interna del fornitore. Conserva nel fascicolo aziendale la data e la scheda ufficiale consultata. Al controllo successivo acquisisci una nuova osservazione e documenta le differenze pertinenti. Per provare il servizio basta una verifica mirata su un’impresa e sui dati necessari all’affidamento.
+
+
+[Leggere il riepilogo in n8n](../delivery-receipts/README.md#n8n)

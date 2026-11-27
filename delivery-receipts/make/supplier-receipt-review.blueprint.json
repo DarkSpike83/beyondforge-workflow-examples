@@ -1,0 +1,56 @@
+{
+  "name": "Supplier price comparison · review a normalized receipt",
+  "flow": [
+    {
+      "id": 1,
+      "module": "json:ParseJSON",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "json": "{\"status\":\"SUCCEEDED\",\"expectedRun\":\"synthetic-supplier-42\",\"receivedRun\":\"synthetic-supplier-42\",\"actorMatched\":true,\"sourceComplete\":true,\"sameSupplier\":true,\"mode\":\"preview\",\"expectedEvents\":0,\"chargedEvents\":0,\"exceptionSkus\":2}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0,
+          "name": "Paste one private or synthetic normalized receipt"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "module": "util:SetVariable2",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "name": "reviewDecision",
+        "scope": "roundtrip",
+        "value": "{{if(1.status != \"SUCCEEDED\"; \"HOLD_INCOMPLETE\"; if(length(1.expectedRun) = 0; \"HOLD_IDENTITY\"; if(1.expectedRun != 1.receivedRun; \"HOLD_IDENTITY\"; if(1.actorMatched != true; \"HOLD_IDENTITY\"; if(1.sameSupplier != true; \"HOLD_SUPPLIER\"; if(1.sourceComplete != true; \"HOLD_INCOMPLETE\"; if(length(toString(1.chargedEvents)) = 0; \"HOLD_BILLING\"; if(length(toString(1.expectedEvents)) = 0; \"HOLD_BILLING\"; if(1.mode = \"preview\"; if(1.chargedEvents = 0; if(1.expectedEvents = 0; \"DEMO_ONLY\"; \"HOLD_BILLING\"); \"HOLD_BILLING\"); if(1.mode != \"audit\"; \"HOLD_MODE\"; if(1.expectedEvents != 1; \"HOLD_BILLING\"; if(1.chargedEvents != 1; \"HOLD_BILLING\"; if(length(toString(1.exceptionSkus)) = 0; \"HOLD_INCOMPLETE\"; if(1.exceptionSkus < 0; \"HOLD_INCOMPLETE\"; if(1.exceptionSkus != floor(1.exceptionSkus); \"HOLD_INCOMPLETE\"; if(1.exceptionSkus > 0; \"REVIEW_CHANGES\"; \"CLEAN_REPORT\"))))))))))))))))}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 300,
+          "y": 0,
+          "name": "Classify for human review"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 1,
+      "autoCommit": true,
+      "autoCommitTriggerLast": false,
+      "sequential": false,
+      "confidential": true,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": {
+      "orphans": []
+    }
+  }
+}

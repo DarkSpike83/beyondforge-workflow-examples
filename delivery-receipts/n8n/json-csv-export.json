@@ -1,0 +1,94 @@
+{
+  "name": "json-csv-export · read one existing delivery",
+  "active": false,
+  "nodes": [
+    {
+      "id": "accccd36-bd70-5223-ab33-5da19b43e53b",
+      "name": "Manual review",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "f65c7392-4eaf-5ec0-8fd0-de350fd2c52b",
+      "name": "Trusted job reference",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Demo only. Replace with a lookup in the customer's trusted job ledger.\nreturn [{json: {expectedRunId: \"SYNTHETIC-json-csv-export\"}}];"
+      }
+    },
+    {
+      "id": "08e0a951-5758-5e90-966a-fbfee31eddcd",
+      "name": "Synthetic receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{json: {\n  \"actor\": \"json-csv-export\",\n  \"runId\": \"SYNTHETIC-json-csv-export\",\n  \"status\": \"SUCCEEDED\",\n  \"rows\": [\n    {\n      \"rowCount\": 2,\n      \"csv\": \"sku,available\\r\\nBOX-A,8\\r\\nBOX-B,0\\r\\n\"\n    }\n  ],\n  \"actId\": \"bAyeKMBTe1EvIMnTu\"\n}}];"
+      }
+    },
+    {
+      "id": "fbc2aceb-0807-5c40-aa7e-1abfea4f1790",
+      "name": "Read delivered fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const entries = $input.all();\nconst jobs = $('Trusted job reference').all(0, $runIndex);\nif (entries.length !== 1 || jobs.length !== 1) throw new Error('Expected one receipt and one job reference');\nconst expectedRunId = jobs[0].json.expectedRunId;\nconst receipt = entries[0].json;\nif (typeof expectedRunId !== 'string' || !expectedRunId.trim() || expectedRunId.trim() !== expectedRunId ||\n    receipt.runId !== expectedRunId || receipt.actId !== \"bAyeKMBTe1EvIMnTu\" || receipt.actor !== \"json-csv-export\" ||\n    receipt.status !== 'SUCCEEDED') throw new Error('Actor, run or terminal status mismatch');\nconst {runId, rows} = receipt;\n\nif (!Array.isArray(rows) || !rows.length) throw new Error('No delivered rows to hand off');\nreturn rows.map(row => {\n  if (Number.isInteger(row.rowCount) && row.rowCount >= 0 &&\n      typeof row.csv === 'string' && row.csv.length) {\n    return {json:{runId, rowCount:row.rowCount, csv:row.csv}};\n  }\n  throw new Error('Invalid row for this Actor');\n});\n"
+      }
+    }
+  ],
+  "connections": {
+    "Manual review": {
+      "main": [
+        [
+          {
+            "node": "Trusted job reference",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trusted job reference": {
+      "main": [
+        [
+          {
+            "node": "Synthetic receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthetic receipt": {
+      "main": [
+        [
+          {
+            "node": "Read delivered fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "name": "pdf-text-pages · read one existing delivery",
+  "active": false,
+  "nodes": [
+    {
+      "id": "0026ac83-6532-50dd-bf75-3209dcd8fce1",
+      "name": "Manual review",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "844ef986-dbe5-5f57-b286-733137e714f3",
+      "name": "Trusted job reference",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Demo only. Replace with a lookup in the customer's trusted job ledger.\nreturn [{json: {expectedRunId: \"SYNTHETIC-pdf-text-pages\"}}];"
+      }
+    },
+    {
+      "id": "3ee18ba9-397e-590d-9411-b5b1e1108647",
+      "name": "Synthetic receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{json: {\n  \"actor\": \"pdf-text-pages\",\n  \"runId\": \"SYNTHETIC-pdf-text-pages\",\n  \"status\": \"SUCCEEDED\",\n  \"rows\": [\n    {\n      \"page\": 2,\n      \"documentPages\": 2,\n      \"text\": \"Approved delivery\"\n    }\n  ],\n  \"actId\": \"kdLRbOFI8lU7cdLWv\"\n}}];"
+      }
+    },
+    {
+      "id": "9a480169-8a8d-5308-947c-fb180f62dd4d",
+      "name": "Read delivered fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const entries = $input.all();\nconst jobs = $('Trusted job reference').all(0, $runIndex);\nif (entries.length !== 1 || jobs.length !== 1) throw new Error('Expected one receipt and one job reference');\nconst expectedRunId = jobs[0].json.expectedRunId;\nconst receipt = entries[0].json;\nif (typeof expectedRunId !== 'string' || !expectedRunId.trim() || expectedRunId.trim() !== expectedRunId ||\n    receipt.runId !== expectedRunId || receipt.actId !== \"kdLRbOFI8lU7cdLWv\" || receipt.actor !== \"pdf-text-pages\" ||\n    receipt.status !== 'SUCCEEDED') throw new Error('Actor, run or terminal status mismatch');\nconst {runId, rows} = receipt;\n\nif (!Array.isArray(rows) || !rows.length) throw new Error('No delivered rows to hand off');\nreturn rows.map(row => {\n  if (Number.isInteger(row.page) && row.page > 0 &&\n      Number.isInteger(row.documentPages) && row.page <= row.documentPages && typeof row.text === 'string' && row.text.trim()) {\n    return {json:{runId, page:row.page, documentPages:row.documentPages, text:row.text}};\n  }\n  throw new Error('Invalid row for this Actor');\n});\n"
+      }
+    }
+  ],
+  "connections": {
+    "Manual review": {
+      "main": [
+        [
+          {
+            "node": "Trusted job reference",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trusted job reference": {
+      "main": [
+        [
+          {
+            "node": "Synthetic receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthetic receipt": {
+      "main": [
+        [
+          {
+            "node": "Read delivered fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

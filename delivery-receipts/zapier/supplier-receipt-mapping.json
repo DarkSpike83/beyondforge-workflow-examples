@@ -1,0 +1,11 @@
+{
+  "format": "BeyondForge configuration worksheet, not a Zapier import",
+  "title": "Read a finished supplier price comparison receipt",
+  "trigger": {"app":"Apify","event":"Finished Actor Run","actor":"beyondforge/supplier-catalog-reconciliation","statuses":["SUCCEEDED"]},
+  "action": {"app":"Apify","event":"Get Key-Value Store Record","keyValueStore":"Map the finished run's defaultKeyValueStoreId","recordKey":"RUN_SUMMARY"},
+  "syntheticInput":{"id":"SYNTHETIC-SUPPLIER-42","actId":"6LdV9Lku6qZCYYF5f","status":"SUCCEEDED","defaultKeyValueStoreId":"SYNTHETIC-STORE-42"},
+  "syntheticExpectedLookup":{"keyValueStore":"SYNTHETIC-STORE-42","recordKey":"RUN_SUMMARY"},
+  "syntheticExpectedExcerpt":{"outcome":"complete","outputMode":"preview","deliveredReports":1,"chargedEvents":0},
+  "startsActor":false,
+  "defaultEnabled":false
+}

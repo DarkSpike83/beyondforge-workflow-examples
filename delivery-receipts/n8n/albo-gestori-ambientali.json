@@ -1,0 +1,94 @@
+{
+  "name": "albo-gestori-ambientali · read one existing delivery",
+  "active": false,
+  "nodes": [
+    {
+      "id": "3dcf36ae-1b71-5f12-a6bb-fde9fd87be15",
+      "name": "Manual review",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "12c18866-0939-5ad3-a3fa-935d3fbdebee",
+      "name": "Trusted job reference",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Demo only. Replace with a lookup in the customer's trusted job ledger.\nreturn [{json: {expectedRunId: \"SYNTHETIC-albo-gestori-ambientali\"}}];"
+      }
+    },
+    {
+      "id": "67c481ae-0d20-53d7-80ab-7bf4deff89b9",
+      "name": "Synthetic receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{json: {\n  \"actor\": \"albo-gestori-ambientali\",\n  \"runId\": \"SYNTHETIC-albo-gestori-ambientali\",\n  \"status\": \"SUCCEEDED\",\n  \"summary\": {\n    \"recordsSaved\": 1,\n    \"regionsSearched\": 1,\n    \"stopReason\": \"maxResults\"\n  },\n  \"actId\": \"dulaBRchXhuENMm3d\"\n}}];"
+      }
+    },
+    {
+      "id": "7827ddbc-10e4-5e7b-9a90-672e279b5df6",
+      "name": "Read delivered fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const entries = $input.all();\nconst jobs = $('Trusted job reference').all(0, $runIndex);\nif (entries.length !== 1 || jobs.length !== 1) throw new Error('Expected one receipt and one job reference');\nconst expectedRunId = jobs[0].json.expectedRunId;\nconst receipt = entries[0].json;\nif (typeof expectedRunId !== 'string' || !expectedRunId.trim() || expectedRunId.trim() !== expectedRunId ||\n    receipt.runId !== expectedRunId || receipt.actId !== \"dulaBRchXhuENMm3d\" || receipt.actor !== \"albo-gestori-ambientali\" ||\n    receipt.status !== 'SUCCEEDED') throw new Error('Actor, run or terminal status mismatch');\nconst {runId, rows} = receipt;\n\nconst summary = receipt.summary;\nif (!summary || !Number.isInteger(summary.recordsSaved) || summary.recordsSaved < 0 ||\n    !Number.isInteger(summary.regionsSearched) || summary.regionsSearched < 1 ||\n    !['maxResults', 'endOfResults'].includes(summary.stopReason)) {\n  throw new Error('Missing or unsupported registry summary');\n}\nreturn [{json:{runId, recordsSaved:summary.recordsSaved, regionsSearched:summary.regionsSearched,\n  stopReason:summary.stopReason, decision:summary.stopReason === 'maxResults' ? 'LIMIT_REACHED_REVIEW_SCOPE' : 'REVIEW_OFFICIAL_REGISTER'}}];\n"
+      }
+    }
+  ],
+  "connections": {
+    "Manual review": {
+      "main": [
+        [
+          {
+            "node": "Trusted job reference",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trusted job reference": {
+      "main": [
+        [
+          {
+            "node": "Synthetic receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthetic receipt": {
+      "main": [
+        [
+          {
+            "node": "Read delivered fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

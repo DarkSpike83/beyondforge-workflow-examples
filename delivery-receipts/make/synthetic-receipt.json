@@ -1,0 +1,12 @@
+{
+  "status": "SUCCEEDED",
+  "expectedRun": "synthetic-supplier-42",
+  "receivedRun": "synthetic-supplier-42",
+  "actorMatched": true,
+  "sourceComplete": true,
+  "sameSupplier": true,
+  "mode": "preview",
+  "expectedEvents": 0,
+  "chargedEvents": 0,
+  "exceptionSkus": 2
+}

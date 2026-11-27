@@ -1,0 +1,94 @@
+{
+  "name": "html-markdown-batch · read one existing delivery",
+  "active": false,
+  "nodes": [
+    {
+      "id": "e244c7c2-d8da-5595-8dad-53c8a7dcf89a",
+      "name": "Manual review",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "112b2069-7618-50a8-9a0b-9cda97a7e637",
+      "name": "Trusted job reference",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Demo only. Replace with a lookup in the customer's trusted job ledger.\nreturn [{json: {expectedRunId: \"SYNTHETIC-html-markdown-batch\"}}];"
+      }
+    },
+    {
+      "id": "1b5674cc-64d7-5d56-937b-92939210d6e4",
+      "name": "Synthetic receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{json: {\n  \"actor\": \"html-markdown-batch\",\n  \"runId\": \"SYNTHETIC-html-markdown-batch\",\n  \"status\": \"SUCCEEDED\",\n  \"rows\": [\n    {\n      \"markdown\": \"| Component | Status |\\n| --- | --- |\\n| Parser | Ready |\\n| Exporter | Pending |\"\n    }\n  ],\n  \"actId\": \"l0FzouietCktp3hSV\"\n}}];"
+      }
+    },
+    {
+      "id": "425de832-c9d1-5aeb-8a20-964919f672fa",
+      "name": "Read delivered fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const entries = $input.all();\nconst jobs = $('Trusted job reference').all(0, $runIndex);\nif (entries.length !== 1 || jobs.length !== 1) throw new Error('Expected one receipt and one job reference');\nconst expectedRunId = jobs[0].json.expectedRunId;\nconst receipt = entries[0].json;\nif (typeof expectedRunId !== 'string' || !expectedRunId.trim() || expectedRunId.trim() !== expectedRunId ||\n    receipt.runId !== expectedRunId || receipt.actId !== \"l0FzouietCktp3hSV\" || receipt.actor !== \"html-markdown-batch\" ||\n    receipt.status !== 'SUCCEEDED') throw new Error('Actor, run or terminal status mismatch');\nconst {runId, rows} = receipt;\n\nif (!Array.isArray(rows) || !rows.length) throw new Error('No delivered rows to hand off');\nreturn rows.map(row => {\n  if (typeof row.markdown === 'string' && row.markdown.trim()) {\n    return {json:{runId, markdown:row.markdown}};\n  }\n  throw new Error('Invalid row for this Actor');\n});\n"
+      }
+    }
+  ],
+  "connections": {
+    "Manual review": {
+      "main": [
+        [
+          {
+            "node": "Trusted job reference",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trusted job reference": {
+      "main": [
+        [
+          {
+            "node": "Synthetic receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthetic receipt": {
+      "main": [
+        [
+          {
+            "node": "Read delivered fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
