@@ -1,0 +1,1255 @@
+{
+  "name": "Validate Google Merchant Center XML feeds before catalog upload",
+  "nodes": [
+    {
+      "id": "afff69ad-0e1b-519e-8c44-b0692f376c6f",
+      "name": "Start here",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -352.0
+      ],
+      "parameters": {
+        "content": "## Validate Google Merchant Center XML feeds before catalog upload\nFree n8n template. BeyondForge supplies the hosted Actor. Your Apify account pays $0.90 per 1,000 delivered offer audits plus $0.00005 per default-memory start. The manual sample can incur both charges.\n\nUse Manual Trigger for the sample or send one authorized export. Set the customer-owned Data Table ID, the seeded row ID, stream and USD cap in Configure connection. Bind your Apify credential before enabling your copy. See the setup guide for recovery.",
+        "width": 805,
+        "height": 310,
+        "color": 5
+      }
+    },
+    {
+      "id": "f0ff800a-ad24-507c-a14a-fd8abd205a8b",
+      "name": "Test with one sample",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "4000ed20-2bec-55cb-914c-0bc47ebd13f5",
+      "name": "Receive authorized export",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        220
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "f9211544-b517-50e6-ae56-a2c33e495577",
+      "name": "Sample observation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{\"sequence\": 1, \"expectedOffers\": 1, \"input\": {\"offers\": [{\"id\": \"MUG-RED\", \"title\": \"Red mug\", \"description\": \"Stoneware mug\", \"link\": \"https://example.org/mug-red\", \"image_link\": \"https://example.org/mug-red.png\", \"price\": \"14.50 USD\", \"sale_price\": \"16.00 USD\", \"availability\": \"in_stock\"}], \"maxResults\": 5}}}];"
+      }
+    },
+    {
+      "id": "795ec86f-f7b3-527b-9f96-6742bac7fd61",
+      "name": "Configure connection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const enabled = false;\nconst tableId = 'YOUR_TABLE_ID';\nconst rowId = 1;\nconst scope = 'merchant-demo';\nconst maxUsd = 0.03;\nconst flow = 'merchant';\nconst slug = 'merchant-feed-preflight';\nif (!enabled || !/^[A-Za-z0-9_-]{1,64}$/.test(tableId) || tableId === 'YOUR_TABLE_ID' ||\n    !Number.isSafeInteger(rowId) || rowId < 1 || !/^[a-z0-9-]{1,60}$/.test(scope) ||\n    !Number.isFinite(maxUsd) || maxUsd <= 0 || maxUsd > 10) throw new Error('Configure your private table, row, stream, Apify credential and spending limit first.');\nconst items = $input.all();\nif (items.length !== 1) throw new Error('Provide one captured export per execution.');\nconst { sequence, input, expectedOffers } = items[0].json;\nif (!Number.isSafeInteger(sequence) || sequence < 1 || !input || Array.isArray(input) || typeof input !== 'object')\n  throw new Error('One immutable positive sequence and one Actor input object are required.');\nconst allowed = {\n  merchant:['offers','feedXml','feedUrl','authorizedFetch','maxResults'],\n  supplier:['demoCase','baseline','incoming','priceTolerancePercent'],\n  migration:['demoCase','redirectMap','observations','previousObservations'],\n  rss:['feedXml','feedUrl','authorizedFetch','previousXml','maxResults']\n};\nif (Object.keys(input).some(k=>!allowed[flow].includes(k)))\n  throw new Error('Unexpected Actor option. This integration never requests a billable demo or optional receipt.');\nif (flow === 'merchant' || flow === 'rss') {\n  if ('maxResults' in input && (!Number.isSafeInteger(input.maxResults) || input.maxResults < 1 || input.maxResults > 5000))\n    throw new Error('The requested output limit must be a whole number from 1 through 5000.');\n  const sources = (flow === 'merchant' ? ['offers','feedXml','feedUrl'] : ['feedXml','feedUrl']).filter(k=>k in input);\n  if (sources.length !== 1 || ('feedUrl' in input && input.authorizedFetch !== true))\n    throw new Error('Supply one authorized current source.');\n} else if ('demoCase' in input && Object.keys(input).length !== 1)\n  throw new Error('Keep the demo separate from production data.');\nelse if (!('demoCase' in input) && (flow === 'supplier' ? !input.incoming : !input.redirectMap || !input.observations))\n  throw new Error('The source snapshot or observations are missing.');\nif (flow === 'merchant' && (!Number.isSafeInteger(expectedOffers) || expectedOffers < 0 || expectedOffers > 5000 ||\n    (input.maxResults ?? 5000) < expectedOffers))\n  throw new Error('Supply the trusted distinct offer count from the completed export, within the requested output limit.');\nif (flow === 'merchant' && maxUsd+Number.EPSILON < (5+90*expectedOffers)/100000)\n  throw new Error('Operator cap cannot cover the expected distinct offers and default start. Review the rate and cap before dispatch.');\nif (flow === 'supplier' && input.incoming && (!input.incoming.rows || !Array.isArray(input.incoming.rows) ||\n    !input.incoming.rows.length || input.incoming.rows.length > 5000 ||\n    !Number.isSafeInteger(items[0].json.expectedIncomingRows) || input.incoming.rows.length !== items[0].json.expectedIncomingRows))\n  throw new Error('The publisher must confirm a complete incoming export and its original row count.');\nif (flow === 'supplier' && input.incoming && maxUsd < 0.85 || flow === 'migration' && input.redirectMap && maxUsd < 2.75)\n  throw new Error('Operator cap does not cover one paid full report.');\nlet expectedIds = null;\nconst previousSequence = items[0].json.previousSequence ?? sequence-1;\nif (!Number.isSafeInteger(previousSequence) || previousSequence<0 || previousSequence>=sequence)\n  throw new Error('Expected the completed predecessor sequence for this stream.');\nif (flow === 'merchant') {\n  expectedIds = Array.isArray(input.offers) ? input.offers.map(o=>o?.id) : items[0].json.expectedIds;\n  if (!Array.isArray(expectedIds) || expectedIds.length !== expectedOffers ||\n      expectedIds.some(id=>typeof id !== 'string' || !id.trim() || id!==id.trim()) ||\n      new Set(expectedIds).size !== expectedIds.length) throw new Error('A complete manifest of distinct, nonempty SKUs is required.');\n  expectedIds = expectedIds.map(id=>'id:'+id).sort();\n}\nfunction canonical(value) {\n  if (Array.isArray(value)) return '['+value.map(canonical).join(',')+']';\n  if (value!==null && typeof value==='object') return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+canonical(value[k])).join(',')+'}';\n  return JSON.stringify(value);\n}\nconst crypto = require('crypto');\nconst signature = crypto.createHash('sha256').update(canonical({sequence,previousSequence,input,maxUsd,expectedIds,expectedOffers:expectedOffers??null})).digest('hex');\nreturn [{json:{flow,slug,tableId,rowId,scope,expectedIds,previousSequence,maxUsd,sequence,input,expectedOffers:expectedOffers??null,signature}}];"
+      }
+    },
+    {
+      "id": "b6fe7991-33b0-5d2a-8ff0-27f8fce40da9",
+      "name": "Read state",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Configure connection').first().json.tableId }}"
+        },
+        "options": {},
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "stream",
+              "condition": "eq",
+              "keyValue": "={{ $('Configure connection').first().json.scope }}"
+            }
+          ]
+        },
+        "returnAll": false,
+        "limit": 2
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "8a5482fa-5178-57c8-a465-bddbf4576b35",
+      "name": "Inspect state",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const c=$('Configure connection').first().json, row=$json;\nif ($input.all().length!==1 || row.id!==c.rowId || row.stream!==c.scope ||\n    !/^[a-f0-9]{40}$/.test(row.revision??'') || typeof row.payload!=='string' || row.payload.length>20000)\n  throw new Error('Missing or incorrectly bound private state row.');\nconst st=JSON.parse(row.payload);\nif(st.version!==1 || !Number.isSafeInteger(st.lastSequence) || st.lastSequence<0 ||\n   (st.baselineStore!==null && (!/^[a-zA-Z0-9]+$/.test(st.baselineStore) || !/^[a-f0-9]{64}$/.test(st.baselineDigest??''))) ||\n   (st.baselineStore===null && st.baselineDigest!=null)) throw new Error('Unexpected journal schema or missing baseline fingerprint.');\nlet action='start';\nif(c.sequence<=st.lastSequence) {\n if(c.sequence===st.lastSequence && c.signature!==st.lastSignature) throw new Error('Conflicting reuse of completed sequence.');\n action='duplicate';\n} else if(c.previousSequence!==st.lastSequence) {\n throw new Error('Previous export sequence has not been committed. Hold the newer observation.');\n}\nelse if(st.pending!==null) {\n if(st.pending?.sequence!==c.sequence || st.pending.signature!==c.signature || !/^[a-zA-Z0-9]+$/.test(st.pending.runId??'')) throw new Error('Unresolved operation. Reconcile the recorded intent; do not start another run.');\n action='resume';\n}\nreturn [{json:{state:st,sha:row.revision,action}}];"
+      }
+    },
+    {
+      "id": "53176595-157b-542e-ba02-f54fabad1e00",
+      "name": "Already processed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f3a1195a-9f98-5e07-a002-7bb9ee9821ec",
+              "leftValue": "={{ $json.action==='duplicate' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "e0171c64-5b2e-5cdf-89f8-7952a53ec8d2",
+      "name": "Skip duplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        -220
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{route:'DUPLICATE_SKIP',sequence:$('Configure connection').first().json.sequence}}];"
+      }
+    },
+    {
+      "id": "94f0deff-446c-5c09-9786-23700a2e1d18",
+      "name": "Resume known run?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "eb92a4ad-8d11-58de-90a4-f5af8ef9b622",
+              "leftValue": "={{ $json.action==='resume' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "2ada43d7-104d-5647-ba89-1cf5a487a978",
+      "name": "Resume from journal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        -220
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{runId:$('Inspect state').first().json.state.pending.runId,stateSha:$('Inspect state').first().json.sha}}];"
+      }
+    },
+    {
+      "id": "825f2fd3-bb2f-5aa5-a6a7-5b91a6113121",
+      "name": "Prepare Actor input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const c=$('Configure connection').first().json,st=$('Inspect state').first().json.state;\nconst input={...c.input};\nfunction canonical(x){\n if(Array.isArray(x))return '['+x.map(canonical).join(',')+']';\n if(x!==null && typeof x==='object')return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonical(x[k])).join(',')+'}';\n return JSON.stringify(x);\n}\nif(st.baselineStore && !('demoCase' in input) && ['supplier','rss'].includes(c.flow)){\n const capture=c.flow==='supplier'?$json.body?.incoming:$json.body;\n if(!capture || require('crypto').createHash('sha256').update(canonical(capture)).digest('hex')!==st.baselineDigest)\n    throw new Error('Prior capture changed or expired. Recover the approved baseline before starting a new run.');\n}\nif(c.flow==='supplier' && !('demoCase' in input)) {\n if(st.baselineStore){\n  if('baseline' in input)throw new Error('Stored baseline already exists. Remove the initial baseline.');\n  input.baseline=$json.body?.incoming;\n }\n if(!input.baseline?.rows?.length)throw new Error('Provide the first authorized baseline or restore the previous run storage.');\n}\nif(c.flow==='rss' && st.baselineStore) {\n if('previousXml' in input)throw new Error('Remove previousXml once the checkpoint exists.');\n if($json.body?.version!==1 || !$json.body?.entries)throw new Error('Prior checkpoint is unavailable.');\n input.baseline=$json.body;\n}\nreturn [{json:{input}}];"
+      }
+    },
+    {
+      "id": "b5b8c78b-5e37-5c95-ba70-4660b521fd73",
+      "name": "Prepare claim write",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2760.0,
+        418.0
+      ],
+      "parameters": {
+        "jsCode": "const c=$('Configure connection').first().json;\nconst {state,sha}=$('Inspect state').first().json;\nconst pending={sequence:c.sequence,signature:c.signature,execution:String($execution.id),runId:null};\nconst nextState={...state,pending};\n\nif(!/^[a-f0-9]{40}$/.test(sha??''))throw new Error('Journal revision missing.');\nconst revision=require('crypto').randomBytes(20).toString('hex');\nreturn [{json:{prior:sha,revision,payload:JSON.stringify(nextState)}}];"
+      }
+    },
+    {
+      "id": "be0741a2-f327-5a39-9984-4576a9ede2e4",
+      "name": "Claim operation",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2880,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Configure connection').first().json.tableId }}"
+        },
+        "options": {},
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Configure connection').first().json.rowId }}"
+            },
+            {
+              "keyName": "stream",
+              "condition": "eq",
+              "keyValue": "={{ $('Configure connection').first().json.scope }}"
+            },
+            {
+              "keyName": "revision",
+              "condition": "eq",
+              "keyValue": "={{ $json.prior }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "revision": "={{ $json.revision }}",
+            "payload": "={{ $json.payload }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "revision",
+              "displayName": "revision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload",
+              "displayName": "payload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "85db1148-6cae-5a7d-bed1-c36271fe3be1",
+      "name": "Confirm claim",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        220
+      ],
+      "parameters": {
+        "jsCode": "const expected=$('Prepare claim write').first().json,c=$('Configure connection').first().json;\nif($input.all().length!==1 || $json.id!==c.rowId || $json.stream!==c.scope ||\n   $json.revision!==expected.revision || $json.payload!==expected.payload) throw new Error('Conditional state write was not acknowledged. Stop and reconcile.');\nreturn [{json:{acknowledged:true}}];"
+      }
+    },
+    {
+      "id": "8703334b-18d8-5d9c-bd39-b23fbea1e537",
+      "name": "Start one Actor run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3120,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.apify.com/v2/'+'acts/beyondforge~merchant-feed-preflight/runs?restartOnError=false&maxTotalChargeUsd='+$('Configure connection').first().json.maxUsd }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Prepare Actor input').first().json.input }}"
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "0d50b3e3-672c-5367-8d5f-ceaa04fbc980",
+      "name": "Check submission",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const id=$json.body?.data?.id;\nif(!/^[A-Za-z0-9]+$/.test(id??'')) throw new Error('No confirmed run ID. Keep this operation locked and reconcile.');\nreturn [{json:{runId:id}}];"
+      }
+    },
+    {
+      "id": "23722785-9724-5d17-b61a-5a25125ddc6a",
+      "name": "Prepare run receipt write",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3480.0,
+        418.0
+      ],
+      "parameters": {
+        "jsCode": "const c=$('Configure connection').first().json;\nconst {state}=$('Inspect state').first().json;\nconst sha=$('Claim operation').first().json.revision;\nconst pending={sequence:c.sequence,signature:c.signature,execution:String($execution.id),runId:$json.runId};\nconst nextState={...state,pending};\n\nif(!/^[a-f0-9]{40}$/.test(sha??''))throw new Error('Journal revision missing.');\nconst revision=require('crypto').randomBytes(20).toString('hex');\nreturn [{json:{prior:sha,revision,payload:JSON.stringify(nextState)}}];"
+      }
+    },
+    {
+      "id": "41488ce8-150a-5fbf-9b17-6f36587a027e",
+      "name": "Persist run ID",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3600,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Configure connection').first().json.tableId }}"
+        },
+        "options": {},
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Configure connection').first().json.rowId }}"
+            },
+            {
+              "keyName": "stream",
+              "condition": "eq",
+              "keyValue": "={{ $('Configure connection').first().json.scope }}"
+            },
+            {
+              "keyName": "revision",
+              "condition": "eq",
+              "keyValue": "={{ $json.prior }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "revision": "={{ $json.revision }}",
+            "payload": "={{ $json.payload }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "revision",
+              "displayName": "revision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload",
+              "displayName": "payload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "4272c7e7-2c31-5837-807a-7687b368b509",
+      "name": "Use acknowledged run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3840,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const expected=$('Prepare run receipt write').first().json,c=$('Configure connection').first().json;\nif($input.all().length!==1 || $json.id!==c.rowId || $json.stream!==c.scope ||\n   $json.revision!==expected.revision || $json.payload!==expected.payload) throw new Error('Conditional state write was not acknowledged. Stop and reconcile.');\nreturn [{json:{runId:$('Check submission').first().json.runId,stateSha:$json.revision}}];"
+      }
+    },
+    {
+      "id": "b9df903c-0d19-5a04-97c0-8038d412dc9a",
+      "name": "Prepare lookup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4080,
+        0
+      ],
+      "parameters": {
+        "jsCode": "if(!/^[a-zA-Z0-9]+$/.test($json.runId) || !/^[a-f0-9]{40}$/.test($json.stateSha))throw new Error('Run or journal receipt missing.');return $input.all();"
+      }
+    },
+    {
+      "id": "beeac66c-0570-5446-ac72-c70c905408ae",
+      "name": "Read final status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4320,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.apify.com/v2/'+'actor-runs/'+$('Prepare lookup').first().json.runId+'?waitForFinish=60' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "851fd5e7-59a6-5295-992d-9e99e5f62270",
+      "name": "Require terminal state",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4320,
+        220
+      ],
+      "parameters": {
+        "jsCode": "const r=$json.body?.data;\nif(r?.id!==$('Prepare lookup').first().json.runId)throw new Error('Run receipt mismatch.');\nif(!['SUCCEEDED','FAILED','ABORTED','TIMED-OUT'].includes(r.status))throw new Error('Run pending. Repeat the same sequence and input to resume without a new start.');\nreturn [{json:{terminal:true}}];"
+      }
+    },
+    {
+      "id": "63390a1c-6f8a-59ad-9cae-7d84e0e85ad1",
+      "name": "Allow billing to settle",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4560,
+        220
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 10,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "cb693db5-c913-59e8-a970-2f62a12c822c",
+      "name": "Read settled accounting",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4800,
+        220
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.apify.com/v2/'+'actor-runs/'+$('Prepare lookup').first().json.runId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "eb9a60b2-c92f-5639-a9bd-01e328175907",
+      "name": "Check run identity",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4560,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const r=$json.body?.data;\nif(!r || r.id!==$('Prepare lookup').first().json.runId || r.actId!=='kiyhZwamPiGAxKkcw' ||\n   ![r.defaultDatasetId,r.defaultKeyValueStoreId].every(x=>typeof x==='string' && /^[A-Za-z0-9]+$/.test(x)))\n throw new Error('Run identity or storage mismatch.');\nif(!['SUCCEEDED','FAILED','ABORTED','TIMED-OUT'].includes(r.status))throw new Error('Run pending. Repeat the same sequence and input to resume without a new start.');\nreturn [{json:r}];"
+      }
+    },
+    {
+      "id": "b88a99b1-ba82-58a4-ae35-60d938bb608e",
+      "name": "Read run summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4800,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.apify.com/v2/'+'key-value-stores/'+$('Check run identity').first().json.defaultKeyValueStoreId+'/records/RUN_SUMMARY' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "e2bbc166-72e0-546c-8e16-068c8da202c3",
+      "name": "Require complete run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5040,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const run=$('Check run identity').first().json,outcome=$json.body?.outcome;\nif(run.status!=='SUCCEEDED' || outcome!=='complete') {\n const reason=['plan_required','plan_limit','free_limit','budget_limit','budget_insufficient','result_limit','source_error','invalid_input'].includes(outcome)?outcome:run.status;\n throw new Error('No complete delivery ('+reason+'). Reconcile this observation; baseline held.');\n}\nreturn [{json:{complete:true}}];"
+      }
+    },
+    {
+      "id": "9b301f62-4ae9-5776-b9bc-69a7c94bcfb8",
+      "name": "Read delivered rows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5280,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.apify.com/v2/'+'datasets/'+$('Check run identity').first().json.defaultDatasetId+'/items?format=json&limit=5001&offset=0' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "3503fa05-24e2-52ef-82ba-66cdae252893",
+      "name": "Verify delivery and charges",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5760,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const c = $('Configure connection').first().json;\nconst state = $('Inspect state').first().json;\nconst run = $('Check run identity').first().json;\nconst summary = $('Read run summary').first().json.body;\nconst rows = $('Read delivered rows').first().json.body;\nfunction check(test,message) { if (!test) throw new Error(message+' State was not advanced. Inspect this run before any new POST.'); }\nfunction same(a,b) { return canonical(a) === canonical(b); }\n// Actor reports use sorted JSON with UTF-8 and integer counts, including SKU/path strings.\nfunction canonical(x) {\n  if (x === null || typeof x !== 'object') return JSON.stringify(x);\n  if (Array.isArray(x)) return '['+x.map(canonical).join(',')+']';\n  return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonical(x[k])).join(',')+'}';\n}\nconst digest = x=>require('crypto').createHash('sha256').update(canonical(x)).digest('hex');\nconst isDigest=x=>typeof x==='string' && /^[a-f0-9]{64}$/.test(x);\nconst integer=n=>Number.isSafeInteger(n) && n >= 0;\nconst record=x=>x && typeof x==='object' && !Array.isArray(x);\ncheck(record(summary) && summary.outcome === 'complete' && Array.isArray(rows),'Incomplete service, plan restriction or invalid dataset.');\nconst ledger = run.chargedEventCounts;\ncheck(record(ledger) && Object.values(ledger).every(integer),'Missing platform charge counters.');\nconst event = {merchant:'offer-audited',rss:'feed-change',migration:'migration-audited',supplier:'catalog-reconciled'}[c.flow];\nconst reportProduct = c.flow==='supplier' || c.flow==='migration';\nconst preview = reportProduct && 'demoCase' in c.input;\nconst expectedCharge = reportProduct ? (preview?0:1) : rows.length;\ncheck((ledger['apify-actor-start']??0) <= (reportProduct?0:1),'Unexpected number of platform start events at the default memory.');\nfor(const [key,count] of Object.entries(ledger)) {\n  if (!count || key === event || (!reportProduct && key==='apify-actor-start')) continue;\n  throw new Error('Unexpected paid event. Preserve the journal and reconcile.');\n}\ncheck((ledger[event]??0) === expectedCharge,'PPE counter and delivered unit count disagree.');\nlet route, result, advanceBaseline=false, nextCapture=null;\nif (!reportProduct) {\n  check(integer(summary.matched) && summary.matched===rows.length && summary.returned===rows.length && summary.event===event &&\n        rows.every(x=>record(x)&&typeof x.id==='string'&&x.id) && new Set(rows.map(x=>x.id)).size===rows.length,\n        'Incomplete or duplicate business units.');\n}\nif (c.flow==='merchant') {\n  check(summary.uniqueOffers===rows.length && summary.uniqueOffers===c.expectedOffers &&\n        integer(summary.inputOffers) && summary.inputOffers>=summary.uniqueOffers,'Catalog coverage differs from the export manifest.');\n  check(rows.every(x=>['passed_checks','review'].includes(x.status) && Array.isArray(x.findings) &&\n        (x.status==='review')===Boolean(x.findings.length)),'Unknown offer finding.');\n  check(same(rows.map(r=>r.id).sort(),c.expectedIds),'Returned SKUs differ from the export manifest.');\n  const corrections=rows.filter(x=>x.status==='review');\n  route=!rows.length?'EMPTY_CATALOG':corrections.length?'HOLD_EXPORT':'READY_FOR_REVIEW';\n  const access=c.input.feedUrl || c.expectedOffers>25 ? 'paid_feature' : 'free_compatible_inline';\n  result={audited:rows.length,access,corrections};\n}\nreturn [{json:{route,result,runId:run.id,storeId:run.defaultKeyValueStoreId,datasetId:run.defaultDatasetId,\n baselineStore:advanceBaseline?run.defaultKeyValueStoreId:state.state.baselineStore,\n baselineDigest:advanceBaseline?digest(nextCapture):state.state.baselineDigest??null,\n event,verifiedUnits:expectedCharge}}];"
+      }
+    },
+    {
+      "id": "1bb134d3-5d04-553f-ab52-ff232a5e2193",
+      "name": "Prepare completion write",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5880.0,
+        418.0
+      ],
+      "parameters": {
+        "jsCode": "const c=$('Configure connection').first().json;\nconst {stateSha:sha,runId}=$('Prepare lookup').first().json;\nconst nextState={version:1,lastSequence:c.sequence,lastSignature:c.signature,baselineStore:$json.baselineStore,\n baselineDigest:$json.baselineDigest,pending:null,lastRunId:runId,lastRoute:$json.route};\n\nif(!/^[a-f0-9]{40}$/.test(sha??''))throw new Error('Journal revision missing.');\nconst revision=require('crypto').randomBytes(20).toString('hex');\nreturn [{json:{prior:sha,revision,payload:JSON.stringify(nextState)}}];"
+      }
+    },
+    {
+      "id": "f9621629-2d32-5bae-8150-74ba6233837c",
+      "name": "Commit verified observation",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        6000,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Configure connection').first().json.tableId }}"
+        },
+        "options": {},
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Configure connection').first().json.rowId }}"
+            },
+            {
+              "keyName": "stream",
+              "condition": "eq",
+              "keyValue": "={{ $('Configure connection').first().json.scope }}"
+            },
+            {
+              "keyName": "revision",
+              "condition": "eq",
+              "keyValue": "={{ $json.prior }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "revision": "={{ $json.revision }}",
+            "payload": "={{ $json.payload }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "revision",
+              "displayName": "revision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload",
+              "displayName": "payload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "9588aa9b-0521-54eb-bb41-7779911980a4",
+      "name": "Deliver verified result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const expected=$('Prepare completion write').first().json,c=$('Configure connection').first().json;\nif($input.all().length!==1 || $json.id!==c.rowId || $json.stream!==c.scope ||\n   $json.revision!==expected.revision || $json.payload!==expected.payload) throw new Error('Conditional state write was not acknowledged. Stop and reconcile.');\nconst r=$('Verify delivery and charges').first().json; return [{json:{...r,sequence:c.sequence}}];"
+      }
+    },
+    {
+      "id": "d336be4c-8acd-5cd8-bfa0-081cc558bc2d",
+      "name": "Ready for downstream approval?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6480,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fafa2820-64f4-5832-9df3-6a6c8b703203",
+              "leftValue": "={{ ['READY_FOR_REVIEW','CLEAN_CATALOG','READY_FOR_SIGN_OFF','UNCHANGED'].includes($json.route) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "f9b82c29-a521-505b-b2d9-135aea89d693",
+      "name": "Completed control",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        6720,
+        -220
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "ccb05d02-2a49-5dda-9ff9-2df5abae3f97",
+      "name": "Review or preview",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        6720,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "38fab920-26cf-5e57-b8db-92cae8bdefce",
+      "name": "Prevent duplicate charges",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2640,
+        -220
+      ],
+      "parameters": {
+        "content": "## Reserve before billing\nA conditional update on a pre-created private Data Table row reserves this sequence. Keep retries on POST disabled. When the POST result is ambiguous the state stays locked. Resolve it against your own Apify run history before continuing. Only a known run may be resumed.",
+        "width": 590,
+        "height": 215,
+        "color": 5
+      }
+    },
+    {
+      "id": "1bcd89e1-c0ef-5e96-9542-8bf1d3506bee",
+      "name": "Read the result",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4800,
+        -220
+      ],
+      "parameters": {
+        "content": "## Read and verify\nCheck the terminal status, summary, complete dataset and platform event ledger. Any failed check stops the route. A missing summary or expired prior capture also requires review.",
+        "width": 590,
+        "height": 215,
+        "color": 5
+      }
+    },
+    {
+      "id": "f1c72482-96c9-5696-9e05-1ac138a83562",
+      "name": "Consumer output",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6240,
+        -440
+      ],
+      "parameters": {
+        "content": "## Downstream routing\nThe result contains a decision and verified Apify references. Attach customer-owned approval, review or ticketing here. Keep DEMO_ONLY and every HOLD or empty-source decision away from production approvals. Key downstream writes by runId for idempotence.",
+        "width": 590,
+        "height": 215,
+        "color": 5
+      }
+    }
+  ],
+  "connections": {
+    "Test with one sample": {
+      "main": [
+        [
+          {
+            "node": "Sample observation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample observation": {
+      "main": [
+        [
+          {
+            "node": "Configure connection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configure connection": {
+      "main": [
+        [
+          {
+            "node": "Read state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read state": {
+      "main": [
+        [
+          {
+            "node": "Inspect state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inspect state": {
+      "main": [
+        [
+          {
+            "node": "Already processed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive authorized export": {
+      "main": [
+        [
+          {
+            "node": "Configure connection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already processed?": {
+      "main": [
+        [
+          {
+            "node": "Skip duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resume known run?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume known run?": {
+      "main": [
+        [
+          {
+            "node": "Resume from journal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Actor input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Actor input": {
+      "main": [
+        [
+          {
+            "node": "Prepare claim write",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare claim write": {
+      "main": [
+        [
+          {
+            "node": "Claim operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim operation": {
+      "main": [
+        [
+          {
+            "node": "Confirm claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm claim": {
+      "main": [
+        [
+          {
+            "node": "Start one Actor run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start one Actor run": {
+      "main": [
+        [
+          {
+            "node": "Check submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check submission": {
+      "main": [
+        [
+          {
+            "node": "Prepare run receipt write",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare run receipt write": {
+      "main": [
+        [
+          {
+            "node": "Persist run ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist run ID": {
+      "main": [
+        [
+          {
+            "node": "Use acknowledged run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use acknowledged run": {
+      "main": [
+        [
+          {
+            "node": "Prepare lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume from journal": {
+      "main": [
+        [
+          {
+            "node": "Prepare lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare lookup": {
+      "main": [
+        [
+          {
+            "node": "Read final status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read final status": {
+      "main": [
+        [
+          {
+            "node": "Require terminal state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require terminal state": {
+      "main": [
+        [
+          {
+            "node": "Allow billing to settle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Allow billing to settle": {
+      "main": [
+        [
+          {
+            "node": "Read settled accounting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read settled accounting": {
+      "main": [
+        [
+          {
+            "node": "Check run identity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check run identity": {
+      "main": [
+        [
+          {
+            "node": "Read run summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read run summary": {
+      "main": [
+        [
+          {
+            "node": "Require complete run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require complete run": {
+      "main": [
+        [
+          {
+            "node": "Read delivered rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read delivered rows": {
+      "main": [
+        [
+          {
+            "node": "Verify delivery and charges",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify delivery and charges": {
+      "main": [
+        [
+          {
+            "node": "Prepare completion write",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare completion write": {
+      "main": [
+        [
+          {
+            "node": "Commit verified observation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Commit verified observation": {
+      "main": [
+        [
+          {
+            "node": "Deliver verified result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deliver verified result": {
+      "main": [
+        [
+          {
+            "node": "Ready for downstream approval?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ready for downstream approval?": {
+      "main": [
+        [
+          {
+            "node": "Completed control",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Review or preview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": false,
+    "saveManualExecutions": false,
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "executionTimeout": 180,
+    "callerPolicy": "workflowsFromSameOwner"
+  }
+}
