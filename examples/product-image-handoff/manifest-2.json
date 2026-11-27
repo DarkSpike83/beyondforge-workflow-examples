@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "studio-blocks",
+  "rows": [
+    {
+      "sku": "BOX-04",
+      "position": 1,
+      "fileName": "images/BOX-04--1.jpg",
+      "mimeType": "image/jpeg",
+      "width": 80,
+      "height": 64,
+      "bytes": 1543,
+      "sha256": "910715fc8d4021aa002d290bd33d20439797644f7770ae1bedde017b5a285c61",
+      "status": "changed",
+      "inArchive": true
+    },
+    {
+      "sku": "BOX-04",
+      "position": 2,
+      "fileName": "images/BOX-04--2.png",
+      "mimeType": "image/png",
+      "width": 80,
+      "height": 64,
+      "bytes": 353,
+      "sha256": "459c8579c3a39beee4231ddca1e8d2293d7eb4fa22d51da3ac764b6a4972edd7",
+      "status": "unchanged",
+      "inArchive": false
+    },
+    {
+      "sku": "TRAY-02",
+      "position": 1,
+      "fileName": "images/TRAY-02--1.png",
+      "mimeType": "image/png",
+      "width": 80,
+      "height": 64,
+      "bytes": 349,
+      "sha256": "9e2129211c6a3b2b4e70340ade10908f720e9d6f15580c119c250f3da46415e2",
+      "status": "new",
+      "inArchive": true
+    }
+  ]
+}

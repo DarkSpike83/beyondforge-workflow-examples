@@ -2,6 +2,7 @@
 
 Open a guide for an illustrated example, an offline case or a read-only API request. Choose the result you need, then review the Actor’s price before starting a run. The field guides contain demonstration data. The Albo example uses a public corporate name. The RUI guide and workbook use synthetic data.
 
+- [Download product images from a URL list and deliver only the changed files](product-image-handoff.md) — Verify a two-delivery SKU image handoff, including a new photo at the same address.
 - [Verifica iscrizione Albo Gestori Ambientali prima dell’affidamento](albo-gestori-ambientali.md) — Cerca un’impresa negli elenchi dell’Albo per nome e sezione. Un esempio per chi qualifica fornitori e vuole risalire alle categorie restituite dalla fonte ufficiale.
 - [Google Shopping XML feed validator for the last check before upload](merchant-feed-preflight.md) — Catch a sale price higher than the regular price in a Google Merchant Center XML feed. Use the SKU finding to decide whether an agency should hold the upload.
 - [RSS feed monitoring for headline corrections under the same GUID](rss-revision-ledger.md) — Compare two RSS snapshots with the same GUID, identify an edited headline and send an actionable correction to the newsroom’s review queue.
