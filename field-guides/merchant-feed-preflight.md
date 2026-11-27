@@ -12,9 +12,18 @@ Catch a sale price higher than the regular price in a Google Merchant Center XML
 
 The Actor returns `status: review` for `DESK-LAMP-01`. The release workflow can use this finding to hold the export. A passing check covers the rules listed by the Actor; Google retains the destination approval decision.
 
-### Check one SKU before the next upload
+### From a held SKU to the next catalog delivery
 
-Open the [sample XML input](inputs/merchant-feed-preflight.json) and compare both prices for `DESK-LAMP-01`. Correct that offer in your source catalog before the next delivery. For an agency checking a Paid feed of 1,000 to 5,000 unique offers, the delivered offer events total USD 0.90 to USD 4.50. Add USD 0.00005 for one start at 256 MiB. Set the run budget for the intended number of results and check the delivered count before releasing the feed.
+The [sample XML input](inputs/merchant-feed-preflight.json) contains one fictional offer. Below are the relevant fields from the Actor dataset before and after the catalog owner corrects the source XML. Both rows were reproduced locally from the shipped fixture.
+
+| Input for `DESK-LAMP-01` | Dataset `offerId` | Dataset `status` | `findings[].code` | Client workflow decision |
+|---|---|---|---|---|
+| Regular `30.00 USD`, sale `35.00 USD` | `DESK-LAMP-01` | `review` | `SALE_PRICE` | `HOLD_EXPORT` |
+| Regular `30.00 USD`, sale `25.00 USD` | `DESK-LAMP-01` | `passed_checks` | No findings | `READY_FOR_REVIEW` |
+
+Assign the first finding to the catalog owner by `offerId`. Correct the sale price in the shop's catalog, regenerate the XML and check that new export under a new operation ID. If a webhook repeats the **same** delivery, reuse its saved receipt. For a new delivery, compare the audited count with the number of distinct offers you expected before releasing it. The Actor performs the feed checks. Your release workflow decides whether to upload. [Python workflow and tutorial](../tutorials/01-merchant-feed-before-upload.md)
+
+At the current 256 MiB list price, one complete pass over 1,000 unique offers totals **USD 0.90005**. For 5,000 offers it totals **USD 4.50005**, including one start in each case. Use the Paid limits for the intended catalog and set `maxResults` and the run budget accordingly. Repeat the check when a catalog change or a new delivery justifies it. Thirty full passes would total USD 27.0015 or USD 135.0015 respectively.
 
 ## Plans and charges
 

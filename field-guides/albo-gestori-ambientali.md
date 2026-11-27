@@ -46,6 +46,25 @@ Con i prezzi pubblici verificati il 27 novembre 2026, ogni record di iscrizione 
 
 Il piano Free consente fino a 10 record per run e usa lo stesso listino. Il piano Paid consente di richiederne fino a 10.000 per run. Per un incarico superiore a 10 record scegli un’unica ricerca Paid con il limite e il budget necessari. Prima di un lotto verificare in Console il credito, il preventivo per le impostazioni selezionate e il numero massimo di risultati.
 
+### Dalla riga alla scheda fornitore
+
+Estratto **interamente sintetico** di una riga del dataset. Il nome e il numero sono dimostrativi.
+
+```json
+{
+  "companyName": "Società Dimostrativa A",
+  "registrationNumber": "DEMO-001",
+  "categories": ["4"],
+  "hasSuspendedCategory": false,
+  "retrievedAt": "2026-01-15T09:00:00Z",
+  "sourceUrl": "https://www.albonazionalegestoriambientali.it/Public/ElenchiIscritti"
+}
+```
+
+L’ufficio acquisti associa la riga alla pratica solo dopo avere confrontato denominazione e numero con i documenti del fornitore. In caso di omonimia usa il codice fiscale o la partita IVA in una ricerca puntuale. `retrievedAt` è la data di consultazione. Per accertare validità, scadenze e idoneità della categoria all’attività da affidare, apri la scheda ufficiale e registra il riscontro nella pratica. `hasSuspendedCategory: false` indica soltanto che nelle categorie restituite non è stata rilevata una dicitura di sospensione.
+
+Per qualificare un portafoglio, puoi ottenere in un’unica ricerca Paid le iscrizioni della regione o provincia pertinente e riconciliarle con gli identificativi dei tuoi fornitori nel tuo gestionale. Se l’incarico richiede verifiche nominative, la modalità `company` accetta una sola `query` per avvio. Il costo di 100 righe in tabella vale per **una sola ricerca** che consegna 100 iscrizioni. Più ricerche distinte hanno ciascuna il proprio avvio.
+
 ## Quando ripetere la verifica
 
 Un controllo ha senso quando entra un nuovo trasportatore, cambia il servizio richiesto o scade la qualifica interna del fornitore. Conserva nel fascicolo aziendale la data e la scheda ufficiale consultata. Al controllo successivo acquisisci una nuova osservazione e documenta le differenze pertinenti. Per provare il servizio basta una verifica mirata su un’impresa e sui dati necessari all’affidamento.
