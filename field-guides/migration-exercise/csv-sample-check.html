@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'; connect-src 'none'; object-src 'none'; worker-src 'none'"><meta name="description" content="Check URL, HTTP status and Location fields in small migration samples before running an audit. Your files stay in your browser.">
+<title>Redirect Map CSV Validator | BeyondForge</title><style>:root{color-scheme:light;font-family:"Source Sans 3","Segoe UI",sans-serif;color:#172e34;background:#f2f5f3;line-height:1.5}
+*{box-sizing:border-box}body{margin:0}main{width:min(100% - 2rem,54rem);margin:2.6rem auto 4rem}
+header{margin-bottom:1.5rem}.brand{font-weight:750;color:#195c52;letter-spacing:.01em}
+h1{font-size:clamp(1.9rem,5vw,3rem);letter-spacing:-.045em;line-height:1.1;margin:.55rem 0 .8rem}
+h2,legend{font-size:1.15rem;font-weight:700;margin:0 0 .35rem}p{margin:.4rem 0 .8rem}
+form{background:white;border:1px solid #c9d8d4;border-radius:.85rem;padding:clamp(1rem,4vw,2rem)}
+fieldset{margin:0;padding:0;border:0;min-width:0}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:1rem}
+.card{background:#f5f8f6;border:1px solid #dbe5df;border-radius:.55rem;padding:1rem}
+.hint,small{color:#445c61;font-size:.92rem}label{display:block;margin:.5rem 0 .22rem;font-weight:600}
+input,button,select{max-width:100%;font:inherit}input[type=file]{width:100%;font-size:.91rem}
+input[type=file]::file-selector-button,select,input[type=text]{color:#163e38;border:1px solid #9bb5aa;border-radius:.3rem;background:white;padding:.36rem .5rem}
+input[type=text]{width:100%}.check{display:flex;gap:.55rem;align-items:flex-start;margin:1rem 0;font-weight:500}
+.check input{margin:.36rem 0 0;accent-color:#14624f}
+.mapping,.legacy{margin-top:1rem}.mapgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,8rem),1fr));gap:.3rem .7rem}
+summary{cursor:pointer;color:#115948;font-weight:650}summary:hover{text-decoration:underline}
+.legacy{border-top:1px solid #d9e4df;padding-top:1rem}.actions{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:1.2rem}
+button{cursor:pointer;border-radius:.4rem;border:1px solid #16674f;background:#16674f;color:#fff;font-weight:650;padding:.55rem .95rem}
+button.secondary{background:white;color:#195549;border:1px solid #aac1ba}
+:focus-visible{outline:3px solid #185fa3;outline-offset:3px}output{display:block;margin-top:1rem}
+output:not(:empty){border-left:.28rem solid #2d7054;background:#e9f4ed;padding:.7rem .85rem}
+output[data-state=error]{background:#fff1e8;border-color:#b84d21;color:#6f3016}
+footer{margin:1rem .1rem;color:#385155;font-size:.95rem}code{font-family:Consolas,monospace;font-size:.95em}
+@media(max-width:40rem){main{margin-top:1.3rem}.cards{grid-template-columns:1fr}}
+</style></head>
+<body><main><header><div class="brand">BeyondForge</div><h1>Redirect Map CSV Validator</h1><p>Check URL, HTTP status and Location fields in small migration samples before running an audit. Your files stay in your browser.</p></header>
+<form id="sample-form" autocomplete="off"><p class="hint">Local files only · UTF-8 CSV · up to 25 data rows per file · 64 KiB combined</p>
+<div class="cards"><section class="card"><h2>Approved URL map</h2><p class="hint">Required headers: source, expected.</p><label for="map">Select CSV</label><input type="file" id="map" accept=".csv,text/csv"></section><section class="card"><h2>Current observations</h2><p class="hint">Required: url, status. Include location for redirects.</p><label for="observations">Select CSV</label><input type="file" id="observations" accept=".csv,text/csv"></section><section class="card"><h2>Earlier observations (optional)</h2><p class="hint">Use the same headers as the current capture.</p><label for="previous">Select CSV</label><input type="file" id="previous" accept=".csv,text/csv"></section></div>
+<div class="actions"><button type="button" id="validate">Check CSV samples</button><button type="reset" class="secondary">Clear files and settings</button></div>
+
+<output id="result" role="status" aria-live="polite"></output><noscript>Enable JavaScript in this local file to run the checks.</noscript></form>
+<footer>Migration Redirect Audit uses complete, authorized HTTP observations from your team. This local tool reads CSV values only. It makes no requests to the URLs in your files.</footer></main>
+<script>"use strict";
+const MAX_BYTES = 65536;
+const MAX_ROWS = 25;
+const $ = id => document.querySelector("#" + id);
+function reject(message) { throw new Error(message); }
+
+// CSV reader for small UTF-8 samples, including quoted newlines and doubled quotes.
+function parseCsv(text, delimiter) {
+  if (![",", ";", "\t"].includes(delimiter)) reject("Choose a supported delimiter.");
+  const rows = [];
+  let row = [], cell = "", state = "start";
+  function field() { row.push(cell); cell = ""; state = "start"; }
+  function record() {
+    field();
+    if (row.length > 100) reject("Use at most 100 columns.");
+    rows.push(row); row = [];
+    if (rows.length > MAX_ROWS + 1) reject("Select up to 25 data rows per file.");
+  }
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (state === "quoted") {
+      if (c !== '"') { cell += c; continue; }
+      if (text[i + 1] === '"') { cell += '"'; i++; continue; }
+      state = "closed"; continue;
+    }
+    if (c === delimiter) { field(); continue; }
+    if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      record(); continue;
+    }
+    if (state === "closed") reject("Check the characters after a closing CSV quote.");
+    if (c === '"') {
+      if (state !== "start") reject("Quote the entire field and double any quotes inside it.");
+      state = "quoted";
+    } else { state = "unquoted"; cell += c; }
+  }
+  if (state === "quoted") reject("Close all quoted CSV fields.");
+  if (state !== "start" || row.length) record();
+  if (rows.length < 2) reject("Include a header and at least one data row.");
+  const [header, ...data] = rows;
+  if (header.some(h => !h || h !== h.trim()) || new Set(header).size !== header.length)
+    reject("Use distinct, nonempty headers without surrounding spaces.");
+  if (data.some(r => r.length !== header.length)) reject("A data row has a different width from the header.");
+  return {header, data};
+}
+function checkedHeaders(header, required, allowed) {
+  if (required.some(name => !header.includes(name))) reject("A required column is missing. Check the headers and mapping.");
+  if (allowed && header.some(name => !allowed.includes(name))) reject("Remove unsupported columns from this sample.");
+}
+function rowObject(header, values) {
+  return new Map(header.map((name, i) => [name, values[i]]));
+}
+function equalDuplicates(map, key, value) {
+  const normalized = JSON.stringify(value);
+  if (map.has(key) && map.get(key) !== normalized) reject("Conflicting duplicate rows occur in one sample.");
+  map.set(key, normalized);
+}
+function fileFor(id) { return $(id).files[0]; }
+function limit(files) {
+  if (files.some(file => !file)) reject("Select both required CSV files.");
+  if (files.reduce((total, file) => total + file.size, 0) > MAX_BYTES)
+    reject("Use samples totalling at most 64 KiB.");
+}
+async function decode(file) {
+  let buffer;
+  try { buffer = await file.arrayBuffer(); } catch { reject("The selected sample could not be read."); }
+  try { return new TextDecoder("utf-8", {fatal: true}).decode(buffer); }
+  catch { reject("Export the sample as UTF-8."); }
+}
+let revision = 0;
+function clearFeedback() {
+  revision++;
+  $("result").textContent = "";
+  $("result").removeAttribute("data-state");
+}
+function bind(id, work) {
+  $(id).onclick = async () => {
+    clearFeedback();
+    const mine = revision;
+    let message, state;
+    try { message = await work(); state = "ok"; }
+    catch (error) { message = error.message; state = "error"; }
+    if (mine === revision) {
+      $("result").textContent = message;
+      $("result").setAttribute("data-state", state);
+    }
+  };
+}
+function bindForm() {
+  const form = $("sample-form");
+  form.oninput = clearFeedback;
+  form.onchange = clearFeedback;
+  form.onreset = clearFeedback;
+  form.onsubmit = e => e.preventDefault();
+}
+const REDIRECTS = new Set([301, 302, 303, 307, 308]);
+function invalidAddress() { reject("Use an ASCII HTTP(S) URL without credentials, a valid host and port, and valid percent escapes."); }
+function checkUrlText(text) {
+  if (typeof text !== "string" || text.length < 1 || text.length > 2048 ||
+      /[^\x21-\x7e]|[\\<>"{}|^\x60]|%(?![0-9a-fA-F]{2})/.test(text)) invalidAddress();
+}
+function absolute(input) {
+  checkUrlText(input);
+  const match = /^(https?):\/\/([^/?#]+)([^?#]*)(?:\?([^#]*))?(?:#[\s\S]*)?$/i.exec(input);
+  if (!match || match[2].includes("@")) invalidAddress();
+  const scheme = match[1].toLowerCase(), authority = match[2];
+  let host, port = "";
+  if (authority.startsWith("[")) {
+    const ip = /^(\[[0-9a-f:.]+\])(?::([0-9]+))?$/i.exec(authority);
+    if (!ip) invalidAddress();
+    try { host = new URL("http://" + ip[1] + "/").hostname; }
+    catch { invalidAddress(); }
+    port = ip[2] || "";
+  } else {
+    const hp = /^([^:]+)(?::([0-9]+))?$/.exec(authority);
+    if (!hp) invalidAddress();
+    host = hp[1].toLowerCase(); port = hp[2] || "";
+    if (host.length > 253 || host.split(".").some(label => !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)))
+      invalidAddress();
+  }
+  if (port && (!Number.isSafeInteger(Number(port)) || Number(port) < 1 || Number(port) > 65535 || port.length > 2048))
+    invalidAddress();
+  const standard = scheme === "http" ? 80 : 443;
+  const origin = scheme + "://" + host + (port && Number(port) !== standard ? ":" + Number(port) : "");
+  const path = match[3] || "/", query = match[4] || "";
+  const normalized = origin + path + (query ? "?" + query : "");
+  if (normalized.length > 2048) invalidAddress();
+  return {origin, scheme, path, query, normalized};
+}
+function locationAddress(value, originUrl) {
+  checkUrlText(value);
+  if (/^[a-z][a-z0-9+.\-]*:/i.test(value)) return absolute(value).normalized;
+  if (value.startsWith("//")) return absolute(originUrl.scheme + ":" + value).normalized;
+  const ref = value.split("#")[0];
+  const q = ref.indexOf("?");
+  const path = q < 0 ? ref : ref.slice(0,q);
+  let query = q < 0 ? "" : ref.slice(q + 1);
+  if (!path) {
+    query = query || originUrl.query;
+    return absolute(originUrl.origin + originUrl.path + (query ? "?" + query : "")).normalized;
+  }
+  let parts;
+  if (path.startsWith("/")) { parts = path.split("/"); }
+  else {
+    const base = originUrl.path.split("/").slice(0, -1);
+    const joined = base.concat(path.split("/"));
+    parts = joined.filter((part, i) => part !== "" || i === 0 || i === joined.length - 1);
+  }
+  const resolved = [];
+  for (const part of parts) {
+    if (part === "..") { if (resolved.length) resolved.pop(); }
+    else if (part !== ".") resolved.push(part);
+  }
+  if ([".", ".."].includes(parts[parts.length-1])) resolved.push("");
+  const suffix = "/" + resolved.join("/").replace(/^\//, "");
+  return absolute(originUrl.origin + suffix + (query ? "?" + query : "")).normalized;
+}
+function redirectMap(text) {
+  const {header, data} = parseCsv(text, ",");
+  checkedHeaders(header, ["source","expected"], ["source","expected"]);
+  const sources = new Map();
+  for (const cells of data) {
+    const row = rowObject(header, cells);
+    equalDuplicates(sources, absolute(row.get("source")).normalized, absolute(row.get("expected")).normalized);
+  }
+}
+function observations(text) {
+  const {header, data} = parseCsv(text, ",");
+  checkedHeaders(header, ["url","status"], ["url","status","location"]);
+  const sources = new Map();
+  for (const cells of data) {
+    const row = rowObject(header, cells);
+    const source = absolute(row.get("url"));
+    const code = row.get("status");
+    if (!/^[2-5][0-9]{2}$/.test(code)) reject("HTTP status must contain three digits from 200 to 599.");
+    const status = Number(code);
+    const location = row.get("location") || "";
+    let target = null;
+    if (REDIRECTS.has(status)) {
+      if (!location) reject("Include an observed Location for each followed redirect.");
+      target = locationAddress(location, source);
+    } else {
+      if (status >= 300 && status < 400) reject("Only 301, 302, 303, 307 and 308 represent supported redirects.");
+      if (location) reject("Leave Location empty for a terminal observation.");
+    }
+    equalDuplicates(sources, source.normalized, [status, target]);
+  }
+}
+async function migrationCsv() {
+  const files = [fileFor("map"), fileFor("observations")];
+  const previous = fileFor("previous");
+  if (previous) files.push(previous);
+  limit(files);
+  redirectMap(await decode(files[0]));
+  for (const file of files.slice(1)) observations(await decode(file));
+  return "The " + (previous ? "three" : "two") + " samples passed CSV, URL, status and Location checks. Each file was checked separately. The full audit checks evidence coverage and compares observed destinations with the approved map.";
+}
+bindForm();
+bind("validate", migrationCsv);
+</script></body></html>

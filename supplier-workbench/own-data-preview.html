@@ -1,26 +1,207 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'; connect-src 'none'"><title>Supplier catalog format check | BeyondForge</title>
-<style>*{box-sizing:border-box}body{margin:3rem auto;padding:0 1.5rem;max-width:44rem;font:17px/1.55 system-ui;color:#162d34;background:#f8faf9}header{color:#216859;font-weight:700}h1{line-height:1.12}label,button{display:block;margin:1.4rem 0 .4rem}small{display:block}button{border:0;border-radius:.4rem;padding:.65rem 1.4rem;background:#195d51;color:white;font:inherit;cursor:pointer}output{display:block;margin-top:1rem;font-weight:650}</style></head>
-<body><header>BeyondForge</header><h1>Check a supplier catalog sample</h1><p>Choose a UTF-8 JSON array containing one to five rows from a single supplier. This local check validates SKU, stock, price and currency. It reads your sample in this browser and discards it when you close the page.</p><label for="catalog">Catalog sample (.json, up to 32 KiB)</label><input type="file" id="catalog" accept=".json,application/json"><small>Each row needs a unique text SKU, non-negative integer stock, a price string such as “12.50” and a three-letter uppercase currency code.</small><button id="check">Check format</button><output id="result" role="status" aria-live="polite"></output>
-<script>
-function checkSample(rows) {
-  if (!Array.isArray(rows) || !rows.length || rows.length>5) return 'Use a JSON array of one to five rows.';
-  const skus=new Set();
-  for (const r of rows) {
-    if(!r || typeof r.sku!=='string' || !r.sku.trim() || r.sku.trim()!==r.sku || skus.has(r.sku))
-      return 'Check the SKU column for missing, repeated or padded values.';
-    if(!Number.isSafeInteger(r.stock)||r.stock<0) return 'Use a non-negative integer for stock.';
-    if(typeof r.price!=='string'||!/^\d+(\.\d{1,4})?$/.test(r.price)) return 'Use a price string with at most four decimal places.';
-    if(typeof r.currency!=='string'||!/^[A-Z]{3}$/.test(r.currency)) return 'Use a three-letter uppercase currency code.';
-    if(r.unit!==undefined && (typeof r.unit!=='string'||!r.unit.trim()))return 'Use a non-empty text unit.';
-    if(r.packSize!==undefined && (!Number.isSafeInteger(r.packSize)||r.packSize<1))return 'Use a positive integer for pack size.';
-    skus.add(r.sku);
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'; connect-src 'none'; object-src 'none'; worker-src 'none'"><meta name="description" content="Check SKU, stock, price and currency fields in two samples from the same supplier. Your files stay in your browser.">
+<title>CSV Validator for Supplier Price Lists | BeyondForge</title><style>:root{color-scheme:light;font-family:"Source Sans 3","Segoe UI",sans-serif;color:#172e34;background:#f2f5f3;line-height:1.5}
+*{box-sizing:border-box}body{margin:0}main{width:min(100% - 2rem,54rem);margin:2.6rem auto 4rem}
+header{margin-bottom:1.5rem}.brand{font-weight:750;color:#195c52;letter-spacing:.01em}
+h1{font-size:clamp(1.9rem,5vw,3rem);letter-spacing:-.045em;line-height:1.1;margin:.55rem 0 .8rem}
+h2,legend{font-size:1.15rem;font-weight:700;margin:0 0 .35rem}p{margin:.4rem 0 .8rem}
+form{background:white;border:1px solid #c9d8d4;border-radius:.85rem;padding:clamp(1rem,4vw,2rem)}
+fieldset{margin:0;padding:0;border:0;min-width:0}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:1rem}
+.card{background:#f5f8f6;border:1px solid #dbe5df;border-radius:.55rem;padding:1rem}
+.hint,small{color:#445c61;font-size:.92rem}label{display:block;margin:.5rem 0 .22rem;font-weight:600}
+input,button,select{max-width:100%;font:inherit}input[type=file]{width:100%;font-size:.91rem}
+input[type=file]::file-selector-button,select,input[type=text]{color:#163e38;border:1px solid #9bb5aa;border-radius:.3rem;background:white;padding:.36rem .5rem}
+input[type=text]{width:100%}.check{display:flex;gap:.55rem;align-items:flex-start;margin:1rem 0;font-weight:500}
+.check input{margin:.36rem 0 0;accent-color:#14624f}
+.mapping,.legacy{margin-top:1rem}.mapgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,8rem),1fr));gap:.3rem .7rem}
+summary{cursor:pointer;color:#115948;font-weight:650}summary:hover{text-decoration:underline}
+.legacy{border-top:1px solid #d9e4df;padding-top:1rem}.actions{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:1.2rem}
+button{cursor:pointer;border-radius:.4rem;border:1px solid #16674f;background:#16674f;color:#fff;font-weight:650;padding:.55rem .95rem}
+button.secondary{background:white;color:#195549;border:1px solid #aac1ba}
+:focus-visible{outline:3px solid #185fa3;outline-offset:3px}output{display:block;margin-top:1rem}
+output:not(:empty){border-left:.28rem solid #2d7054;background:#e9f4ed;padding:.7rem .85rem}
+output[data-state=error]{background:#fff1e8;border-color:#b84d21;color:#6f3016}
+footer{margin:1rem .1rem;color:#385155;font-size:.95rem}code{font-family:Consolas,monospace;font-size:.95em}
+@media(max-width:40rem){main{margin-top:1.3rem}.cards{grid-template-columns:1fr}}
+</style></head>
+<body><main><header><div class="brand">BeyondForge</div><h1>CSV Validator for Supplier Price Lists</h1><p>Check SKU, stock, price and currency fields in two samples from the same supplier. Your files stay in your browser.</p></header>
+<form id="sample-form" autocomplete="off"><p class="hint">Local files only · UTF-8 CSV · up to 25 data rows per file · 64 KiB combined</p>
+<div class="cards"><section class="card"><h2>Previous price list</h2><p class="hint">A sample of the earlier catalog.</p><label for="baseline">Select CSV</label><input type="file" id="baseline" accept=".csv,text/csv">
+<label for="baseline-delim">Delimiter</label><select id="baseline-delim"><option value=",">Comma</option><option value=";">Semicolon</option><option value="tab">Tab</option></select>
+<details class="mapping"><summary>Map custom headers</summary><p class="hint">Enter the exact header from this file. A blank field uses the placeholder name.</p><div class="mapgrid"><div><label for="baseline-sku">SKU</label><input type="text" id="baseline-sku" placeholder="sku" maxlength="128"></div><div><label for="baseline-stock">Stock</label><input type="text" id="baseline-stock" placeholder="stock" maxlength="128"></div><div><label for="baseline-price">Price</label><input type="text" id="baseline-price" placeholder="price" maxlength="128"></div><div><label for="baseline-currency">Currency</label><input type="text" id="baseline-currency" placeholder="currency" maxlength="128"></div><div><label for="baseline-unit">Unit (optional)</label><input type="text" id="baseline-unit" placeholder="unit" maxlength="128"></div><div><label for="baseline-packSize">Pack size (optional)</label><input type="text" id="baseline-packSize" placeholder="packSize" maxlength="128"></div></div></details></section><section class="card"><h2>New price list</h2><p class="hint">A sample of the next delivery from the same supplier.</p><label for="incoming">Select CSV</label><input type="file" id="incoming" accept=".csv,text/csv">
+<label for="incoming-delim">Delimiter</label><select id="incoming-delim"><option value=",">Comma</option><option value=";">Semicolon</option><option value="tab">Tab</option></select>
+<details class="mapping"><summary>Map custom headers</summary><p class="hint">Enter the exact header from this file. A blank field uses the placeholder name.</p><div class="mapgrid"><div><label for="incoming-sku">SKU</label><input type="text" id="incoming-sku" placeholder="sku" maxlength="128"></div><div><label for="incoming-stock">Stock</label><input type="text" id="incoming-stock" placeholder="stock" maxlength="128"></div><div><label for="incoming-price">Price</label><input type="text" id="incoming-price" placeholder="price" maxlength="128"></div><div><label for="incoming-currency">Currency</label><input type="text" id="incoming-currency" placeholder="currency" maxlength="128"></div><div><label for="incoming-unit">Unit (optional)</label><input type="text" id="incoming-unit" placeholder="unit" maxlength="128"></div><div><label for="incoming-packSize">Pack size (optional)</label><input type="text" id="incoming-packSize" placeholder="packSize" maxlength="128"></div></div></details></section></div><label class="check"><input type="checkbox" id="allowed">I am authorized to use both exports and confirm that they came from the same supplier.</label>
+<div class="actions"><button type="button" id="validate">Check CSV samples</button><button type="reset" class="secondary">Clear files and settings</button></div>
+<details class="legacy"><summary>Check a single JSON sample instead</summary><p class="hint">Choose one to five rows with unique SKUs. Use integer stock, a decimal price string, a three-letter currency and optional unit and pack size.</p><label for="catalog">JSON sample, up to 32 KiB</label><input id="catalog" type="file" accept=".json,application/json"><div class="actions"><button type="button" id="check" class="secondary">Check JSON format</button></div></details>
+<output id="result" role="status" aria-live="polite"></output><noscript>Enable JavaScript in this local file to run the checks.</noscript></form>
+<footer>This tool checks whether each sample can be read by Supplier Catalog Reconciliation. The full Actor compares both complete catalogs and reports changes.</footer></main>
+<script>"use strict";
+const MAX_BYTES = 65536;
+const MAX_ROWS = 25;
+const $ = id => document.querySelector("#" + id);
+function reject(message) { throw new Error(message); }
+
+// CSV reader for small UTF-8 samples, including quoted newlines and doubled quotes.
+function parseCsv(text, delimiter) {
+  if (![",", ";", "\t"].includes(delimiter)) reject("Choose a supported delimiter.");
+  const rows = [];
+  let row = [], cell = "", state = "start";
+  function field() { row.push(cell); cell = ""; state = "start"; }
+  function record() {
+    field();
+    if (row.length > 100) reject("Use at most 100 columns.");
+    rows.push(row); row = [];
+    if (rows.length > MAX_ROWS + 1) reject("Select up to 25 data rows per file.");
   }
-  return 'Sample format accepted. A paid audit compares two complete exports from this supplier.';
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (state === "quoted") {
+      if (c !== '"') { cell += c; continue; }
+      if (text[i + 1] === '"') { cell += '"'; i++; continue; }
+      state = "closed"; continue;
+    }
+    if (c === delimiter) { field(); continue; }
+    if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      record(); continue;
+    }
+    if (state === "closed") reject("Check the characters after a closing CSV quote.");
+    if (c === '"') {
+      if (state !== "start") reject("Quote the entire field and double any quotes inside it.");
+      state = "quoted";
+    } else { state = "unquoted"; cell += c; }
+  }
+  if (state === "quoted") reject("Close all quoted CSV fields.");
+  if (state !== "start" || row.length) record();
+  if (rows.length < 2) reject("Include a header and at least one data row.");
+  const [header, ...data] = rows;
+  if (header.some(h => !h || h !== h.trim()) || new Set(header).size !== header.length)
+    reject("Use distinct, nonempty headers without surrounding spaces.");
+  if (data.some(r => r.length !== header.length)) reject("A data row has a different width from the header.");
+  return {header, data};
 }
-document.querySelector('#check').onclick=async()=>{
-  const file=document.querySelector('#catalog').files[0],out=document.querySelector('#result');
-  if(!file||file.size>32768){out.textContent='Choose a sample of up to 32 KiB.';return}
-  try{out.textContent=checkSample(JSON.parse(await file.text()))}catch{out.textContent='This file could not be read as UTF-8 JSON.'}
-};
+function checkedHeaders(header, required, allowed) {
+  if (required.some(name => !header.includes(name))) reject("A required column is missing. Check the headers and mapping.");
+  if (allowed && header.some(name => !allowed.includes(name))) reject("Remove unsupported columns from this sample.");
+}
+function rowObject(header, values) {
+  return new Map(header.map((name, i) => [name, values[i]]));
+}
+function equalDuplicates(map, key, value) {
+  const normalized = JSON.stringify(value);
+  if (map.has(key) && map.get(key) !== normalized) reject("Conflicting duplicate rows occur in one sample.");
+  map.set(key, normalized);
+}
+function fileFor(id) { return $(id).files[0]; }
+function limit(files) {
+  if (files.some(file => !file)) reject("Select both required CSV files.");
+  if (files.reduce((total, file) => total + file.size, 0) > MAX_BYTES)
+    reject("Use samples totalling at most 64 KiB.");
+}
+async function decode(file) {
+  let buffer;
+  try { buffer = await file.arrayBuffer(); } catch { reject("The selected sample could not be read."); }
+  try { return new TextDecoder("utf-8", {fatal: true}).decode(buffer); }
+  catch { reject("Export the sample as UTF-8."); }
+}
+let revision = 0;
+function clearFeedback() {
+  revision++;
+  $("result").textContent = "";
+  $("result").removeAttribute("data-state");
+}
+function bind(id, work) {
+  $(id).onclick = async () => {
+    clearFeedback();
+    const mine = revision;
+    let message, state;
+    try { message = await work(); state = "ok"; }
+    catch (error) { message = error.message; state = "error"; }
+    if (mine === revision) {
+      $("result").textContent = message;
+      $("result").setAttribute("data-state", state);
+    }
+  };
+}
+function bindForm() {
+  const form = $("sample-form");
+  form.oninput = clearFeedback;
+  form.onchange = clearFeedback;
+  form.onreset = clearFeedback;
+  form.onsubmit = e => e.preventDefault();
+}
+const ROLES = ["sku", "stock", "price", "currency", "unit", "packSize"];
+function normalizePrice(value) {
+  if (typeof value !== "string" || !/^[0-9]{1,12}(?:\.[0-9]{1,4})?$/.test(value))
+    reject("Use nonnegative decimal prices with up to 12 whole and four fractional digits.");
+  const [whole, fractional = ""] = value.split(".");
+  const tail = fractional.replace(/0+$/, "");
+  return String(Number(whole)) + (tail ? "." + tail : "");
+}
+function normalizedItem(value) {
+  const {sku, stock, price, currency, unit, packSize} = value;
+  if (typeof sku !== "string" || !sku || [...sku].length > 128 || sku.trim() !== sku ||
+      /[\p{C}\p{Z}]/u.test(sku.replace(/ /g, ""))) reject("Check SKU length, spaces and printable characters.");
+  if (typeof stock !== "string" || !/^[0-9]{1,12}$/.test(stock)) reject("Use a nonnegative whole stock quantity of up to 12 digits.");
+  if (typeof currency !== "string" || !/^[A-Z]{3}$/.test(currency)) reject("Use a three-letter uppercase currency code.");
+  if (unit !== undefined && !/^[A-Za-z][A-Za-z0-9_-]{0,31}$/.test(unit)) reject("Check optional unit codes.");
+  if (packSize !== undefined && !/^[1-9][0-9]{0,5}$/.test(packSize)) reject("Use a positive pack size of up to six digits.");
+  return [Number(stock), normalizePrice(price), currency, unit?.toLowerCase() ?? null, packSize === undefined ? null : Number(packSize)];
+}
+function sampleCatalog(text, delimiter, columns) {
+  const {header, data} = parseCsv(text, delimiter);
+  const names = ROLES.map(role => columns[role] || role);
+  if (names.some(name => [...name].length > 128) || new Set(names).size !== names.length)
+    reject("Map each catalog role to a distinct header of up to 128 characters.");
+  checkedHeaders(header, names.slice(0, 4));
+  for (let i = 4; i < names.length; i++)
+    if (columns[ROLES[i]] && !header.includes(names[i])) reject("A mapped optional column is missing.");
+  const skus = new Map();
+  for (const cells of data) {
+    const row = rowObject(header, cells);
+    const values = Object.fromEntries(ROLES.map((role, i) => [role, row.get(names[i])]));
+    equalDuplicates(skus, values.sku, normalizedItem(values));
+  }
+}
+function checkSample(rows) {
+  if (!Array.isArray(rows) || !rows.length || rows.length > 5) return "Use a JSON array of one to five rows.";
+  const seen = new Set();
+  try {
+    for (const row of rows) {
+      if (!row || !Number.isSafeInteger(row.stock) || typeof row.price !== "string" ||
+          (row.unit !== undefined && typeof row.unit !== "string") ||
+          (row.packSize !== undefined && !Number.isSafeInteger(row.packSize)))
+        reject("Use a numeric integer stock, a decimal price string and the documented optional fields.");
+      normalizedItem({...row, stock: String(row.stock),
+                      packSize: row.packSize === undefined ? undefined : String(row.packSize)});
+      if (seen.has(row.sku)) reject("Select unique SKUs for the five-row JSON example.");
+      seen.add(row.sku);
+    }
+  } catch (error) { return error.message; }
+  return "Sample format accepted. A paid audit compares two complete exports from this supplier.";
+}
+async function supplierCsv() {
+  if (!$("allowed").checked) reject("Confirm you can use both exports from the same supplier.");
+  const files = [fileFor("baseline"), fileFor("incoming")];
+  limit(files);
+  const settings = ["baseline", "incoming"].map(side => ({
+    delimiter: $(side + "-delim").value === "tab" ? "\t" : $(side + "-delim").value,
+    columns: Object.fromEntries(ROLES.map(role => [role, $(side + "-" + role).value]))
+  }));
+  for (const [i, file] of files.entries())
+    sampleCatalog(await decode(file), settings[i].delimiter, settings[i].columns);
+  return "Both samples passed header, row and field checks. The catalogs were checked separately. Comparing their stock, prices and assortment requires the full audit.";
+}
+bindForm();
+bind("validate", supplierCsv);
+bind("check", async () => {
+  const file = fileFor("catalog");
+  if (!file || file.size > 32768) reject("Choose a JSON sample of up to 32 KiB.");
+  let rows; const text = await decode(file);
+  try { rows = JSON.parse(text); } catch { reject("Use a valid JSON array."); }
+  const msg = checkSample(rows);
+  if (!msg.startsWith("Sample format accepted.")) reject(msg);
+  return msg;
+});
 </script></body></html>

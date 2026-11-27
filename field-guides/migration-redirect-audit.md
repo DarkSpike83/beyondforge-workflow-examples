@@ -12,6 +12,10 @@ Compare planned 301 redirect targets with recorded crawl evidence. Catch migrati
 
 The synthetic example finishes at `https://new.example/` while the expected URL is `https://new.example/guides`. The Actor evaluates supplied observations; acquiring a current crawl remains part of the customer’s release process.
 
+### Check your own redirect map CSV
+
+Open the [Redirect Map CSV Validator](migration-exercise/csv-sample-check.html) on GitHub, select **Download raw file** and open the saved HTML in your browser. Select small samples of your approved map and current HTTP observations. You can also include a previous capture. The free tool checks headers, URL values, HTTP status codes and redirect Location fields locally. It makes no requests to your URLs. Use the Paid audit when you need to trace complete evidence and compare observed destinations with the approved map.
+
 ## Plans and charges
 
 The built-in preview uses no `migration-audited` event. Custom maps require Paid. One completed full audit costs USD 2.75, including a clean audit. There is no separate fee per start, URL, hop or anomaly.

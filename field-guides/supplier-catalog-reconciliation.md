@@ -16,6 +16,10 @@ The synthetic demo has one SKU moving from USD 10 to 12.50 and another from USD 
 
 Use two price lists sent to your business by the same supplier. In the built-in preview, match the same SKU across both versions and confirm which price the buyer will pay next. When a replacement list arrives, use the last accepted list as the baseline and record both file dates with the report. Compare your own files on Paid when a full report is worth USD 0.85 to your team, including when all items agree.
 
+### Check your own supplier CSV samples
+
+Open the [CSV Validator for Supplier Price Lists](../supplier-workbench/own-data-preview.html) on GitHub, select **Download raw file** and open the saved HTML in your browser. Select one small sample from each of two successive price lists you are authorized to use from the same supplier. If the headers differ, map the columns for each file separately. The free tool checks SKU, stock, price and currency locally, including optional units and pack sizes. A complete comparison of stock, prices and assortment across the two lists is available in the Paid Actor.
+
 ## Plans and charges
 
 The built-in preview uses no `catalog-reconciled` event. Own catalogs require Paid. One completed full report costs USD 0.85, including a clean report. There is no separate start, SKU or anomaly fee. Each custom snapshot supports up to 5,000 rows.
