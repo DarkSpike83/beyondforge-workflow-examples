@@ -1,0 +1,22 @@
+{
+  "synthetic": true,
+  "purpose": "Due proiezioni illustrate per lettura offline. Identificativi e date sono dimostrativi. Il numero segnaposto non è un input da eseguire.",
+  "positive": {
+    "verificationType": "rui_number",
+    "recordType": "verification",
+    "matchStatus": "exact_unique",
+    "matchCount": 1,
+    "matches": [{"entityType": "company", "operational": true, "ruiNumber": "<NUMERO_RUI_DIMOSTRATIVO>", "displayName": "Società dimostrativa BF-ALFA", "section": "B"}],
+    "source": {"provider": "IVASS", "dataset": "RUI", "snapshotDate": "2026-11-20", "retrievedAt": "2026-11-21T09:15:00Z"}
+  },
+  "negative": {
+    "verificationType": "domain",
+    "recordType": "verification",
+    "inputValue": "esempio-caso-formativo.invalid",
+    "matchStatus": "not_found",
+    "matchCount": 0,
+    "websiteRecordCount": 0,
+    "matches": [],
+    "source": {"provider": "IVASS", "dataset": "RUI", "snapshotDate": "2026-11-20", "retrievedAt": "2026-11-21T09:15:00Z"}
+  }
+}

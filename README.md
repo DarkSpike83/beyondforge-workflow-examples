@@ -2,7 +2,7 @@
 
 Start with a catalog export, two lists from one supplier, a corrected feed entry or a migration crawl. Choose Python or an importable n8n template, review the sample output and connect the matching BeyondForge Actor.
 
-**New to BeyondForge?** [Explore the eight Actor field guides](field-guides/README.md) for illustrated examples, sample inputs, prices and links to public tasks.
+**New to BeyondForge?** [Explore the Actor field guides](field-guides/README.md) for examples, sample inputs and prices. For Italian insurance intermediaries, open the [guida alla verifica dell’iscrizione RUI di una società](field-guides/rui-ivass/guida-italiana.md).
 
 **Using Make?** The [Google Merchant feed validator for Make](make/README.md) checks a completed export on your Apify account and sends a minimal receipt to your Make scenario. The client runs in your own environment. For the retry protocol and a one-offer example, see [Webhook idempotency when a paid API call times out](n8n/tutorials/webhook-idempotency.md).
 

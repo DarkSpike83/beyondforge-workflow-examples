@@ -1,6 +1,6 @@
 # BeyondForge field guides
 
-Each guide includes an input, an illustrated example, a public task and a read-only API request. Choose the result you need, then review the Actor’s price before starting a run. The field guides contain demonstration data. The Italian registry example uses a public corporate name and stores no registration records.
+Open a guide for an illustrated example, an offline case or a read-only API request. Choose the result you need, then review the Actor’s price before starting a run. The field guides contain demonstration data. The Albo example uses a public corporate name. The RUI guide and workbook use synthetic data.
 
 - [Verifica iscrizione Albo Gestori Ambientali prima dell’affidamento](albo-gestori-ambientali.md) — Cerca un’impresa negli elenchi dell’Albo per nome e sezione. Un esempio per chi qualifica fornitori e vuole risalire alle categorie restituite dalla fonte ufficiale.
 - [Google Shopping XML feed validator for the last check before upload](merchant-feed-preflight.md) — Catch a sale price higher than the regular price in a Google Merchant Center XML feed. Use the SKU finding to decide whether an agency should hold the upload.
@@ -10,6 +10,7 @@ Each guide includes an input, an illustrated example, a public task and a read-o
 - [Nested JSON to CSV with a stable warehouse handoff](json-csv-export.md) — Flatten nested inventory records into a predictable two-column CSV and preserve zero stock for downstream warehouse imports.
 - [Price list comparison for two exports from the same supplier](supplier-catalog-reconciliation.md) — Compare the last accepted supplier catalog against its replacement by SKU, so a buyer can review price increases and decreases before import.
 - [301 redirect mapping checks when the wrong destination returns 200](migration-redirect-audit.md) — Compare planned 301 redirect targets with recorded crawl evidence. Catch migrations that return HTTP 200 on the wrong page before sign-off.
+- [Come verificare l’iscrizione RUI di una società di intermediazione](rui-ivass/guida-italiana.md) — Per broker, agenzie e responsabili compliance. Controlla il numero societario, lo stato operativo e la data della fonte IVASS. Una scheda offline accompagna la pratica.
 
 ## Use with an AI agent
 

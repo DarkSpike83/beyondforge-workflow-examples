@@ -1,0 +1,54 @@
+{
+  "synthetic": true,
+  "caseId": "DEMO-01",
+  "practice": {
+    "counterparty": "Società dimostrativa BF-ALFA",
+    "purpose": "Preparare una scheda interna da confrontare con il registro ufficiale.",
+    "identityMatch": "Da verificare nel registro IVASS"
+  },
+  "input": {
+    "mode": "search",
+    "entityType": "company",
+    "operationalStatus": "operational",
+    "maxResults": 1,
+    "includeSourceMetadata": true,
+    "includeDataQuality": false,
+    "includeLinkedIntermediaryDetails": false,
+    "includeCollaboratorsInProfile": false,
+    "updateBaseline": false
+  },
+  "datasetProjection": {
+    "recordType": "intermediary",
+    "entityType": "company",
+    "operational": true,
+    "source": {
+      "provider": "IVASS",
+      "dataset": "RUI",
+      "snapshotDate": "2026-11-20",
+      "retrievedAt": "2026-11-21T09:15:00Z",
+      "sourceUrl": "https://ruipubblico.ivass.it/inquiry-public-manager/inquiry-public/esporta-registro"
+    }
+  },
+  "billingIllustration": {
+    "currency": "USD",
+    "memoryMiB": 1024,
+    "events": [
+      {
+        "event": "apify-actor-start",
+        "count": 1,
+        "unit": 0.03
+      },
+      {
+        "event": "search-result",
+        "count": 1,
+        "unit": 0.0005
+      }
+    ],
+    "nominalSubtotal": 0.0305
+  },
+  "notes": [
+    "Nome della controparte e date sono inventati. La proiezione dimostrativa non è un estratto della prova cloud.",
+    "L'input seleziona una sola riga tra le società operative. L'identità della controparte resta da confrontare con il registro ufficiale.",
+    "L'importo è un esempio nominale del caso specifico. Aprire questa fixture non avvia alcuna esecuzione."
+  ]
+}
