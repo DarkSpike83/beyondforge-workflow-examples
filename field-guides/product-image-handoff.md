@@ -34,3 +34,12 @@ The first ZIP has SHA-256 `77fc632f6d373fc6511438c46472c203e681993fff2d1bad91102
 Start with the [free synthetic repeat handoff](https://apify.com/beyondforge/product-image-handoff/examples/image-version-control-incremental-sku-zip), then use the free preview for up to three images you are authorized to distribute. A professional run on a paying Apify account costs **USD 0.79 per completed package of up to 50 positions**, with explicit charge acceptance. A complete comparison that finds no image changes still delivers the full manifest and costs USD 0.79. In that case the ZIP contains the manifest alone. A new independently started professional run is a new order.
 
 Production use requires your own private storage and account permissions. The downloads here are offline synthetic examples. They contain no customer image, customer run ID, credentials or production billing evidence.
+
+### Free synthetic examples
+
+- [Download images from CSV and name each file by SKU](https://apify.com/beyondforge/product-image-handoff/examples/download-images-from-csv-by-sku)
+- [Detect a replacement photo at the same supplier URL](https://apify.com/beyondforge/product-image-handoff/examples/image-change-detection-same-supplier-url)
+- [Verify an unchanged catalog with image checksums](https://apify.com/beyondforge/product-image-handoff/examples/image-checksum-unchanged-catalog)
+- [Package new and changed SKU images for a repeat handoff](https://apify.com/beyondforge/product-image-handoff/examples/image-version-control-incremental-sku-zip)
+- [Export a product image gallery in SKU position order](https://apify.com/beyondforge/product-image-handoff/examples/product-image-gallery-position-export)
+- [Match a shared product photo to two variant SKUs](https://apify.com/beyondforge/product-image-handoff/examples/product-image-management-shared-variant-photo)
